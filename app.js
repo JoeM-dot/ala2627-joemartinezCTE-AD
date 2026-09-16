@@ -5,7 +5,28 @@ const app = {
   fact: document.querySelector('[data-dynamic-fact]'),
   navLinks: Array.from(document.querySelectorAll('.nav-link')),
   themeToggle: document.querySelector('#themeToggle'),
+  themeLabel: document.querySelector('#themeToggle .theme-toggle-text'),
 };
+
+const THEME_KEY = 'joemartinez-theme';
+
+function applyTheme(theme) {
+  const isDark = theme === 'dark';
+  app.body.classList.toggle('night-mode', isDark);
+  app.body.classList.toggle('light-mode', !isDark);
+
+  if (app.themeToggle) {
+    const label = isDark ? 'Dark' : 'Light';
+    app.themeToggle.setAttribute('aria-pressed', String(isDark));
+    app.themeToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+
+    if (app.themeLabel) {
+      app.themeLabel.textContent = label;
+    }
+  }
+
+  localStorage.setItem(THEME_KEY, theme);
+}
 
 const focusItems = ['Game Design', '3D Modeling', 'Music', 'Luau', 'C++'];
 const facts = [
@@ -54,8 +75,13 @@ function setupNavigation() {
 function setupThemeToggle() {
   if (!app.themeToggle) return;
 
+  const savedTheme = localStorage.getItem(THEME_KEY);
+  const initialTheme = savedTheme || 'dark';
+  applyTheme(initialTheme);
+
   app.themeToggle.addEventListener('click', () => {
-    app.body.classList.toggle('night-mode');
+    const nextTheme = app.body.classList.contains('light-mode') ? 'dark' : 'light';
+    applyTheme(nextTheme);
   });
 }
 
