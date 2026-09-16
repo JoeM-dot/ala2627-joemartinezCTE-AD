@@ -7,24 +7,24 @@
   --font-sans: "Inter", "Segoe UI", Arial, sans-serif;
   --font-display: "Space Grotesk", "Inter", "Segoe UI", Arial, sans-serif;
 
-  --page-bg: #101b17;
-  --panel-bg: rgba(232, 245, 232, 0.08);
-  --panel-soft: rgba(255, 255, 255, 0.05);
-  --line: rgba(223, 244, 221, 0.2);
-  --line-strong: rgba(223, 244, 221, 0.34);
-  --text: #eefae5;
-  --text-soft: #b3b9a9;
-  --text-muted: #b1bdad;
+  --page-bg: #f7f6f1;
+  --panel-bg: rgba(255, 250, 244, 0.56);
+  --panel-soft: rgba(255, 255, 255, 0.72);
+  --line: rgba(86, 104, 115, 0.16);
+  --line-strong: rgba(86, 104, 115, 0.32);
+  --text: #17241f;
+  --text-soft: #60736c;
+  --text-muted: #8b8d7d;
   --text-light: #eef0e8;
-  --sage: #9db68b;
-  --sage-deep: #c6d5bd;
-  --sage-dim: #263d2b;
+  --sage: #b6c2aa;
+  --sage-deep: #586d4d;
+  --sage-dim: #d8e2d7;
   --sage-mute: #8ca385;
-  --sage-heat: #ffd0a7;
+  --sage-heat: #eab88a;
   --sage-glass: rgba(232, 246, 222, 0.12);
-  --shadow: rgba(0, 0, 0, 0.34);
-  --shadow-strong: rgba(0, 0, 0, 0.58);
-  --foam: #111b16;
+  --shadow: rgba(63, 84, 48, 0.14);
+  --shadow-strong: rgba(30, 45, 28, 0.26);
+  --foam: #f8f7ee;
   --mint: #9dbc91;
   --mint-hot: #c3d2a7;
   --cyan: #a3c8bd;
@@ -58,11 +58,7 @@ body.night-mode {
 body {
   margin: 0;
   color: var(--text);
-  background:
-    radial-gradient(circle at var(--cursor-x) var(--cursor-y), var(--sage-glass), transparent 18%),
-    radial-gradient(circle at 82% 16%, rgba(205, 225, 196, 0.7), transparent 10%),
-    radial-gradient(circle at 25% 90%, rgba(223, 180, 126, 0.34), transparent 12%),
-    var(--page-bg);
+  background: var(--page-bg);
   min-height: 100vh;
   font-family: var(--font-sans);
   transition: background 550ms ease, color 500ms ease;
@@ -71,27 +67,7 @@ body {
 body::before,
 body::after {
   content: "";
-  position: fixed;
-  width: 340px;
-  height: 340px;
-  border-radius: 50%;
-  filter: blur(54px);
-  pointer-events: none;
-  opacity: 0.74;
-  animation: drift 9s ease-in-out infinite alternate;
-}
-
-body::before {
-  left: -100px;
-  top: -120px;
-  background: rgba(177, 204, 171, 0.45);
-}
-
-body::after {
-  right: -120px;
-  bottom: -120px;
-  background: rgba(227, 185, 133, 0.36);
-  animation-duration: 11s;
+  display: none;
 }
 
 .site-shell {
@@ -106,13 +82,13 @@ body::after {
 .glass-panel {
   background: var(--panel-bg);
   border: 1px solid var(--line);
-  box-shadow: 0 25px 80px var(--shadow), inset 1px 1px var(--line-shadow);
-  backdrop-filter: blur(23px) saturate(148%);
-  -webkit-backdrop-filter: blur(23px) saturate(148%);
+  box-shadow: 0 10px 24px var(--shadow);
+  backdrop-filter: blur(12px) saturate(110%);
+  -webkit-backdrop-filter: blur(12px) saturate(110%);
 }
 
 .sidebar {
-  border-radius: 30px;
+  border-radius: 22px;
   padding: 30px 26px;
   min-height: 720px;
   display: flex;
@@ -141,16 +117,15 @@ body::after {
 
 .sidebar::after {
   content: "";
-  width: 160px;
-  height: 160px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   border: 1px solid var(--line-strong);
   position: absolute;
-  right: -40px;
-  top: -20px;
-  filter: blur(0.4px);
-  box-shadow: inset 0 0 0 12px rgba(255, 255, 255, 0.04);
+  right: -22px;
+  top: -14px;
   transform: rotate(20deg);
+  opacity: 0.8;
 }
 
 .brand {
@@ -170,8 +145,7 @@ body::after {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  box-shadow: 0 0 0 5px var(--sage-glass);
-  background: radial-gradient(circle, var(--sage-glass), transparent);
+  background: transparent;
 }
 
 .brand-mark span {
@@ -269,12 +243,11 @@ body::after {
   height: 150px;
   border-radius: 50%;
   margin: 0 auto;
-  background: radial-gradient(circle, var(--sage-dim), transparent), var(--foam);
+  background: var(--foam);
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--line-strong);
-  box-shadow: inset 0 0 28px var(--shadow), 0 0 0 12px var(--sage-glass);
   position: relative;
 }
 
@@ -351,7 +324,6 @@ body::after {
   height: 7px;
   border-radius: 50%;
   background: var(--sage);
-  box-shadow: 0 0 0 3px var(--sage-glass);
 }
 
 .sidebar-bottom {
@@ -480,7 +452,7 @@ body::after {
 
 .hero-card {
   min-height: 420px;
-  border-radius: 34px;
+  border-radius: 22px;
   padding: 44px 42px;
   display: grid;
   grid-template-columns: minmax(420px, 1fr) minmax(210px, 0.64fr);
@@ -623,7 +595,7 @@ body::after {
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 12px 30px var(--shadow);
+  box-shadow: 0 8px 18px var(--shadow);
   transition: transform 380ms ease, box-shadow 380ms ease;
 }
 
@@ -634,7 +606,7 @@ body::after {
 
 .primary-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 16px 34px var(--shadow-strong);
+  box-shadow: 0 10px 22px var(--shadow-strong);
 }
 
 .ghost-button {
@@ -667,11 +639,11 @@ body::after {
 .visual-grid {
   width: min(220px, 210px);
   height: min(220px, 210px);
-  border-radius: 30% 50% 34% 50%;
+  border-radius: 26% 42% 28% 42%;
   background-image: radial-gradient(var(--line) 1px, transparent 1px);
   background-size: 20px 20px;
   border: 1px solid var(--line-strong);
-  box-shadow: inset 0 0 40px var(--sage-glass), 0 15px 60px var(--shadow);
+  box-shadow: 0 10px 28px var(--shadow);
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
@@ -707,7 +679,6 @@ body::after {
   inset: 50%;
   transform: translate(-50%, -50%);
   border: 2px solid var(--line);
-  box-shadow: inset 0 0 0 14px var(--sage-glass);
 }
 
 .floating-orbit {
@@ -786,7 +757,7 @@ body::after {
 }
 
 .orbit-panel {
-  border-radius: 34px;
+  border-radius: 22px;
   padding: 30px 24px;
   position: relative;
   overflow: hidden;
@@ -947,7 +918,7 @@ body::after {
   overflow: hidden;
   background: var(--panel-soft);
   padding: 22px 20px;
-  border-radius: 24px;
+  border-radius: 18px;
   border: 1px solid var(--line);
   min-height: 200px;
 }
@@ -1183,7 +1154,7 @@ body::after {
   justify-content: center;
   background: var(--sage-deep);
   color: var(--foam);
-  box-shadow: 0 0 0 1px var(--line), 0 0 0 10px var(--sage-glass);
+  box-shadow: 0 0 0 1px var(--line);
 }
 
 .build-text {
@@ -1225,7 +1196,7 @@ body::after {
 }
 
 .timeline {
-  border-radius: 28px;
+  border-radius: 20px;
   padding: 30px;
   position: relative;
   overflow: hidden;
@@ -1297,7 +1268,7 @@ body::after {
 }
 
 .quote-panel {
-  border-radius: 28px;
+  border-radius: 20px;
   padding: 36px 26px;
   display: flex;
   flex-direction: column;
