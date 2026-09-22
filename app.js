@@ -107,27 +107,46 @@ function setupMazeGame() {
 
   if (!mazeElement || !resetButton || !statusBox || !statusElement || !moveElement || !mazeNumberElement) return;
 
+  function createMaze(seed) {
+    const size = 21;
+    const cells = Array.from({ length: size }, () => Array(size).fill('#'));
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) % 4294967296;
+      return seed / 4294967296;
+    };
+    const directions = [[0, 2], [0, -2], [2, 0], [-2, 0]];
+    const stack = [[1, 1]];
+    cells[1][1] = ' ';
+
+    while (stack.length) {
+      const [row, column] = stack[stack.length - 1];
+      const options = directions
+        .map(([rowDelta, columnDelta]) => [row + rowDelta, column + columnDelta, rowDelta, columnDelta])
+        .filter(([nextRow, nextColumn]) => nextRow > 0 && nextRow < size - 1 && nextColumn > 0 && nextColumn < size - 1)
+        .filter(([nextRow, nextColumn]) => cells[nextRow][nextColumn] === '#');
+
+      if (!options.length) {
+        stack.pop();
+        continue;
+      }
+
+      const [nextRow, nextColumn, rowDelta, columnDelta] = options[Math.floor(random() * options.length)];
+      cells[row + rowDelta / 2][column + columnDelta / 2] = ' ';
+      cells[nextRow][nextColumn] = ' ';
+      stack.push([nextRow, nextColumn]);
+    }
+
+    cells[1][1] = 'S';
+    cells[size - 2][size - 2] = 'E';
+    return cells.map((row) => row.join(''));
+  }
+
   const mazes = [
-    [
-      '###########', '#S        #', '##### ### #', '#     #   #', '# ### # ###',
-      '# #   #   #', '# # ##### #', '# #       #', '# ####### #', '#        E#', '###########'
-    ],
-    [
-      '###########', '#S        #', '# ### ### #', '# #       #', '# # ##### #', '# #     # #',
-      '# ##### # #', '#       # #', '# ### ### #', '#        E#', '###########'
-    ],
-    [
-      '###########', '#S        #', '# ##### # #', '#     # # #', '##### # # #', '#   #   # #',
-      '# # ##### #', '# #       #', '# ####### #', '#        E#', '###########'
-    ],
-    [
-      '###########', '#S        #', '# # ##### #', '# #     # #', '# ##### # #', '#       # #',
-      '# ##### # #', '#     # # #', '# ### # # #', '#        E#', '###########'
-    ],
-    [
-      '###########', '#S        #', '# ####### #', '#       # #', '####### # #', '#     # # #',
-      '# ### # # #', '# #   # # #', '# # ### # #', '#        E#', '###########'
-    ]
+    createMaze(101),
+    createMaze(202),
+    createMaze(303),
+    createMaze(404),
+    createMaze(505)
   ];
   const start = { row: 1, column: 1 };
   let mazeIndex = 0;
@@ -137,6 +156,7 @@ function setupMazeGame() {
   let hasWon = false;
 
   function render() {
+    mazeElement.style.setProperty('--maze-columns', maze[0].length);
     mazeElement.replaceChildren();
     maze.forEach((row, rowIndex) => {
       [...row].forEach((cell, columnIndex) => {
