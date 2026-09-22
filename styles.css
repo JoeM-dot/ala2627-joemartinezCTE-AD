@@ -182,6 +182,10 @@ kbd {
   background: #fff;
 }
 
+.game-reset[hidden] {
+  display: none;
+}
+
 .game-stage {
   width: min(100%, 650px);
   justify-self: end;
@@ -189,8 +193,15 @@ kbd {
 
 .game-status {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   justify-content: space-between;
+  gap: 12px;
   margin-bottom: 14px;
+}
+
+.game-status.is-win {
+  color: #075fc2;
 }
 
 .maze {
@@ -224,7 +235,9 @@ kbd {
 
 .is-player {
   color: #fff;
-  background: #111;
+  background: #075fc2;
+  border-radius: 50%;
+  margin: 18%;
 }
 
 .is-exit {

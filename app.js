@@ -156,6 +156,8 @@ function setupMazeGame() {
     moves = 0;
     hasWon = false;
     statusElement.textContent = 'Reach the exit.';
+    statusElement.classList.remove('is-win');
+    resetButton.hidden = true;
     mazeElement.focus();
     render();
   }
@@ -175,7 +177,9 @@ function setupMazeGame() {
     player = { row: nextRow, column: nextColumn };
     moves += 1;
     hasWon = nextCell === 'E';
-    statusElement.textContent = hasWon ? 'You escaped. Press reset to play again.' : 'Keep moving.';
+    statusElement.textContent = hasWon ? 'You win! You escaped the maze.' : 'Keep moving.';
+    statusElement.classList.toggle('is-win', hasWon);
+    resetButton.hidden = !hasWon;
     render();
   }
 
