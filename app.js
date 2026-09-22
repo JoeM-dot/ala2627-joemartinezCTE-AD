@@ -100,27 +100,38 @@ function setupMouseGlow() {
 function setupMazeGame() {
   const mazeElement = document.querySelector('#maze');
   const resetButton = document.querySelector('#resetGame');
+  const statusBox = document.querySelector('#gameStatusBox');
   const statusElement = document.querySelector('#gameStatus');
   const moveElement = document.querySelector('#moveCount');
+  const mazeNumberElement = document.querySelector('#mazeNumber');
 
-  if (!mazeElement || !resetButton || !statusElement || !moveElement) return;
+  if (!mazeElement || !resetButton || !statusBox || !statusElement || !moveElement || !mazeNumberElement) return;
 
-  const maze = [
-    '###########',
-    '#S        #',
-    '##### ### #',
-    '#     #   #',
-    '# ### # ###',
-    '# #   #   #',
-    '# # ##### #',
-    '# #       #',
-    '# ####### #',
-    '#        E#',
-    '###########'
+  const mazes = [
+    [
+      '###########', '#S        #', '##### ### #', '#     #   #', '# ### # ###',
+      '# #   #   #', '# # ##### #', '# #       #', '# ####### #', '#        E#', '###########'
+    ],
+    [
+      '###########', '#S        #', '# ### ### #', '# #       #', '# # ##### #', '# #     # #',
+      '# ##### # #', '#       # #', '# ### ### #', '#        E#', '###########'
+    ],
+    [
+      '###########', '#S        #', '# ##### # #', '#     # # #', '##### # # #', '#   #   # #',
+      '# # ##### #', '# #       #', '# ####### #', '#        E#', '###########'
+    ],
+    [
+      '###########', '#S        #', '# # ##### #', '# #     # #', '# ##### # #', '#       # #',
+      '# ##### # #', '#     # # #', '# ### # # #', '#        E#', '###########'
+    ],
+    [
+      '###########', '#S        #', '# ####### #', '#       # #', '####### # #', '#     # # #',
+      '# ### # # #', '# #   # # #', '# # ### # #', '#        E#', '###########'
+    ]
   ];
-  const height = maze.length;
-  const width = maze[0].length;
   const start = { row: 1, column: 1 };
+  let mazeIndex = 0;
+  let maze = mazes[mazeIndex];
   let player = { ...start };
   let moves = 0;
   let hasWon = false;
@@ -149,6 +160,7 @@ function setupMazeGame() {
     });
 
     moveElement.textContent = `Moves: ${moves}`;
+    mazeNumberElement.textContent = `Maze ${mazeIndex + 1} / ${mazes.length}`;
   }
 
   function reset() {
@@ -156,8 +168,7 @@ function setupMazeGame() {
     moves = 0;
     hasWon = false;
     statusElement.textContent = 'Reach the exit.';
-    statusElement.classList.remove('is-win');
-    resetButton.hidden = true;
+    statusBox.hidden = true;
     mazeElement.focus();
     render();
   }
@@ -177,9 +188,10 @@ function setupMazeGame() {
     player = { row: nextRow, column: nextColumn };
     moves += 1;
     hasWon = nextCell === 'E';
-    statusElement.textContent = hasWon ? 'You win! You escaped the maze.' : 'Keep moving.';
-    statusElement.classList.toggle('is-win', hasWon);
-    resetButton.hidden = !hasWon;
+    if (hasWon) {
+      statusElement.textContent = `Maze ${mazeIndex + 1} cleared!`;
+      statusBox.hidden = false;
+    }
     render();
   }
 
@@ -201,7 +213,11 @@ function setupMazeGame() {
     movePlayer(...direction);
   });
 
-  resetButton.addEventListener('click', reset);
+  resetButton.addEventListener('click', () => {
+    mazeIndex = (mazeIndex + 1) % mazes.length;
+    maze = mazes[mazeIndex];
+    reset();
+  });
   reset();
 }
 

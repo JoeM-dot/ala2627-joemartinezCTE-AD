@@ -25,7 +25,7 @@
       <div class="game-intro">
         <p class="game-kicker">Black / White / Escape</p>
         <h1 id="game-example-title">Find the way out.</h1>
-        <p class="game-description">Guide the square through the maze and reach the exit.</p>
+        <p class="game-description">Guide the blue dot through each maze and reach the exit.</p>
         <div class="game-instructions">
           <span class="instruction-label">Controls</span>
           <span class="key-row"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>
@@ -35,12 +35,17 @@
       </div>
 
       <div class="game-stage">
-        <div class="game-status" aria-live="polite">
-          <span id="gameStatus">Reach the exit.</span>
+        <div class="maze-meta">
+          <span id="mazeNumber">Maze 1 / 5</span>
           <span id="moveCount">Moves: 0</span>
-          <button class="game-reset" id="resetGame" type="button" hidden>Reset maze</button>
         </div>
-        <div class="maze" id="maze" role="grid" aria-label="Maze game board" tabindex="0"></div>
+        <div class="maze-shell">
+          <div class="maze" id="maze" role="grid" aria-label="Maze game board" tabindex="0"></div>
+          <div class="game-status" id="gameStatusBox" aria-live="polite" hidden>
+            <span id="gameStatus">You win!</span>
+            <button class="game-reset" id="resetGame" type="button">Next maze</button>
+          </div>
+        </div>
         <div class="maze-legend" aria-hidden="true">
           <span><i class="legend-player"></i>You</span>
           <span><i class="legend-exit"></i>Exit</span>

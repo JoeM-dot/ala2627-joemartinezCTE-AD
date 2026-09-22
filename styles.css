@@ -115,8 +115,8 @@ body:has(.game-example-page) {
 
 .game-layout {
   display: grid;
-  grid-template-columns: minmax(240px, 0.7fr) minmax(500px, 1.3fr);
-  gap: clamp(40px, 8vw, 130px);
+  grid-template-columns: minmax(220px, 0.45fr) minmax(650px, 1.55fr);
+  gap: clamp(30px, 5vw, 70px);
   align-items: center;
   min-height: calc(100vh - 150px);
 }
@@ -187,21 +187,23 @@ kbd {
 }
 
 .game-stage {
-  width: min(100%, 650px);
+  width: min(100%, 820px);
   justify-self: end;
 }
 
-.game-status {
+.maze-meta {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 12px;
   margin-bottom: 14px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
-.game-status.is-win {
-  color: #075fc2;
+.maze-shell {
+  position: relative;
 }
 
 .maze {
@@ -211,6 +213,32 @@ kbd {
   outline: none;
   aspect-ratio: 1 / 1;
   background: #fff;
+}
+
+.game-status {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  width: min(86%, 430px);
+  padding: 22px 24px;
+  border: 1px solid rgba(17, 17, 17, 0.2);
+  color: #075fc2;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 10px 30px rgba(17, 17, 17, 0.18);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: translate(-50%, -50%);
+}
+
+.game-status[hidden] {
+  display: none;
 }
 
 .maze:focus-visible {
