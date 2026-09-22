@@ -4,8 +4,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Game Example | Joe M</title>
-  <meta name="description" content="A space for Joe Martinez's game example." />
+  <title>Maze Escape | Joe M</title>
+  <meta name="description" content="A simple keyboard maze escape game by Joe Martinez." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -16,10 +16,37 @@
 
 <body>
   <main class="game-example-page">
-    <a class="game-example-back" href="index.html">&larr; Back to overview</a>
-    <section class="game-example-space" aria-labelledby="game-example-title">
-      <p class="micro-label">Game Example</p>
-      <h1 id="game-example-title">A space for the next idea.</h1>
+    <header class="game-header">
+      <a class="game-example-back" href="index.html">&larr; Back to overview</a>
+      <p class="game-kicker">Game Example // 01</p>
+    </header>
+
+    <section class="game-layout" aria-labelledby="game-example-title">
+      <div class="game-intro">
+        <p class="game-kicker">Black / White / Escape</p>
+        <h1 id="game-example-title">Find the way out.</h1>
+        <p class="game-description">Guide the square through the maze and reach the exit.</p>
+        <div class="game-instructions">
+          <span class="instruction-label">Controls</span>
+          <span class="key-row"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>
+          <span class="instruction-or">or</span>
+          <span class="key-row"><kbd>&uarr;</kbd><kbd>&larr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd></span>
+        </div>
+        <button class="game-reset" id="resetGame" type="button">Reset maze</button>
+      </div>
+
+      <div class="game-stage">
+        <div class="game-status" aria-live="polite">
+          <span id="gameStatus">Reach the exit.</span>
+          <span id="moveCount">Moves: 0</span>
+        </div>
+        <div class="maze" id="maze" role="grid" aria-label="Maze game board" tabindex="0"></div>
+        <div class="maze-legend" aria-hidden="true">
+          <span><i class="legend-player"></i>You</span>
+          <span><i class="legend-exit"></i>Exit</span>
+          <span><i class="legend-wall"></i>Wall</span>
+        </div>
+      </div>
     </section>
   </main>
 

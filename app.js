@@ -97,11 +97,116 @@ function setupMouseGlow() {
   });
 }
 
+function setupMazeGame() {
+  const mazeElement = document.querySelector('#maze');
+  const resetButton = document.querySelector('#resetGame');
+  const statusElement = document.querySelector('#gameStatus');
+  const moveElement = document.querySelector('#moveCount');
+
+  if (!mazeElement || !resetButton || !statusElement || !moveElement) return;
+
+  const maze = [
+    '###########',
+    '#S        #',
+    '##### ### #',
+    '#     #   #',
+    '# ### # ###',
+    '# #   #   #',
+    '# # ##### #',
+    '# #       #',
+    '# ####### #',
+    '#        E#',
+    '###########'
+  ];
+  const height = maze.length;
+  const width = maze[0].length;
+  const start = { row: 1, column: 1 };
+  let player = { ...start };
+  let moves = 0;
+  let hasWon = false;
+
+  function render() {
+    mazeElement.replaceChildren();
+    maze.forEach((row, rowIndex) => {
+      [...row].forEach((cell, columnIndex) => {
+        const tile = document.createElement('span');
+        const isPlayer = player.row === rowIndex && player.column === columnIndex;
+        const isExit = cell === 'E';
+        tile.className = `maze-tile tile-${cell === '#' ? 'wall' : 'floor'}`;
+        tile.setAttribute('role', 'gridcell');
+        tile.setAttribute('aria-label', isPlayer ? 'Player' : isExit ? 'Exit' : cell === '#' ? 'Wall' : 'Path');
+
+        if (isPlayer) {
+          tile.classList.add('is-player');
+          tile.textContent = '●';
+        } else if (isExit) {
+          tile.classList.add('is-exit');
+          tile.textContent = '×';
+        }
+
+        mazeElement.append(tile);
+      });
+    });
+
+    moveElement.textContent = `Moves: ${moves}`;
+  }
+
+  function reset() {
+    player = { ...start };
+    moves = 0;
+    hasWon = false;
+    statusElement.textContent = 'Reach the exit.';
+    mazeElement.focus();
+    render();
+  }
+
+  function movePlayer(rowDelta, columnDelta) {
+    if (hasWon) return;
+
+    const nextRow = player.row + rowDelta;
+    const nextColumn = player.column + columnDelta;
+    const nextCell = maze[nextRow]?.[nextColumn];
+
+    if (!nextCell || nextCell === '#') {
+      statusElement.textContent = 'A wall blocks the way.';
+      return;
+    }
+
+    player = { row: nextRow, column: nextColumn };
+    moves += 1;
+    hasWon = nextCell === 'E';
+    statusElement.textContent = hasWon ? 'You escaped. Press reset to play again.' : 'Keep moving.';
+    render();
+  }
+
+  mazeElement.addEventListener('keydown', (event) => {
+    const directions = {
+      ArrowUp: [-1, 0],
+      ArrowDown: [1, 0],
+      ArrowLeft: [0, -1],
+      ArrowRight: [0, 1],
+      w: [-1, 0],
+      s: [1, 0],
+      a: [0, -1],
+      d: [0, 1]
+    };
+    const direction = directions[event.key] || directions[event.key.toLowerCase()];
+
+    if (!direction) return;
+    event.preventDefault();
+    movePlayer(...direction);
+  });
+
+  resetButton.addEventListener('click', reset);
+  reset();
+}
+
 function init() {
   setupCards();
   setupNavigation();
   setupThemeToggle();
   setupMouseGlow();
+  setupMazeGame();
 
   if (app.heroName) {
     setInterval(cycleFocus, 1800);
