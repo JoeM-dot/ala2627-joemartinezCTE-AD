@@ -170,7 +170,6 @@ function setupMazeGame() {
 
         if (isPlayer) {
           tile.classList.add('is-player');
-          tile.textContent = '●';
         } else if (isExit) {
           tile.classList.add('is-exit');
           tile.textContent = '×';

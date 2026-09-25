@@ -224,7 +224,6 @@ kbd {
   width: max-content;
   outline: none;
   transform: translate3d(var(--camera-x, 0px), var(--camera-y, 0px), 0);
-  transition: transform 160ms ease-out;
 }
 
 .game-status {
@@ -275,10 +274,15 @@ kbd {
 }
 
 .is-player {
-  color: #fff;
-  background: #075fc2;
+  position: relative;
+}
+
+.is-player::after {
+  width: 58%;
+  aspect-ratio: 1;
   border-radius: 50%;
-  margin: 18%;
+  background: #075fc2;
+  content: '';
 }
 
 .is-exit {
