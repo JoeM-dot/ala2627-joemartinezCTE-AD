@@ -104,9 +104,14 @@ function setupMazeGame() {
   const statusElement = document.querySelector('#gameStatus');
   const moveElement = document.querySelector('#moveCount');
   const mazeNumberElement = document.querySelector('#mazeNumber');
+  const mazeSeedElement = document.querySelector('#mazeSeed');
   const mazeViewport = mazeElement?.parentElement;
 
-  if (!mazeElement || !mazeViewport || !resetButton || !statusBox || !statusElement || !moveElement || !mazeNumberElement) return;
+  if (!mazeElement || !mazeViewport || !resetButton || !statusBox || !statusElement || !moveElement || !mazeNumberElement || !mazeSeedElement) return;
+
+  function generateSeed() {
+    return String(Math.floor(Math.random() * 100_000_000)).padStart(8, '0');
+  }
 
   function createMaze(seed) {
     const size = 21;
@@ -137,21 +142,25 @@ function setupMazeGame() {
       stack.push([nextRow, nextColumn]);
     }
 
-    cells[1][1] = 'S';
-    cells[size - 2][size - 2] = 'E';
-    return cells.map((row) => row.join(''));
+    const paths = [];
+    cells.forEach((row, rowIndex) => {
+      row.forEach((cell, columnIndex) => {
+        if (cell === ' ') paths.push({ row: rowIndex, column: columnIndex });
+      });
+    });
+    const start = paths.splice(Math.floor(random() * paths.length), 1)[0];
+    const exitCandidates = paths.filter((path) => Math.abs(path.row - start.row) + Math.abs(path.column - start.column) >= size - 4);
+    const exit = exitCandidates[Math.floor(random() * exitCandidates.length)];
+    cells[start.row][start.column] = 'S';
+    cells[exit.row][exit.column] = 'E';
+    return { cells: cells.map((row) => row.join('')), start };
   }
 
-  const mazes = [
-    createMaze(101),
-    createMaze(202),
-    createMaze(303),
-    createMaze(404),
-    createMaze(505)
-  ];
-  const start = { row: 1, column: 1 };
-  let mazeIndex = 0;
-  let maze = mazes[mazeIndex];
+  let mazeNumber = 1;
+  let mazeSeed = generateSeed();
+  let generatedMaze = createMaze(mazeSeed);
+  let maze = generatedMaze.cells;
+  let start = generatedMaze.start;
   let player = { ...start };
   let moves = 0;
   let hasWon = false;
@@ -188,7 +197,8 @@ function setupMazeGame() {
     mazeElement.style.setProperty('--camera-y', `${cameraY}px`);
 
     moveElement.textContent = `Moves: ${moves}`;
-    mazeNumberElement.textContent = `Maze ${mazeIndex + 1} / ${mazes.length}`;
+    mazeNumberElement.textContent = `Maze ${mazeNumber}`;
+    mazeSeedElement.textContent = `Seed: ${mazeSeed}`;
   }
 
   function reset() {
@@ -217,7 +227,7 @@ function setupMazeGame() {
     moves += 1;
     hasWon = nextCell === 'E';
     if (hasWon) {
-      statusElement.textContent = `Maze ${mazeIndex + 1} cleared!`;
+      statusElement.textContent = `Maze ${mazeNumber} cleared!`;
       statusBox.hidden = false;
     }
     render();
@@ -242,8 +252,11 @@ function setupMazeGame() {
   });
 
   resetButton.addEventListener('click', () => {
-    mazeIndex = (mazeIndex + 1) % mazes.length;
-    maze = mazes[mazeIndex];
+    mazeNumber += 1;
+    mazeSeed = generateSeed();
+    generatedMaze = createMaze(mazeSeed);
+    maze = generatedMaze.cells;
+    start = generatedMaze.start;
     reset();
   });
   reset();
