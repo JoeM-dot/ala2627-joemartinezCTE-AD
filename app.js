@@ -104,8 +104,9 @@ function setupMazeGame() {
   const statusElement = document.querySelector('#gameStatus');
   const moveElement = document.querySelector('#moveCount');
   const mazeNumberElement = document.querySelector('#mazeNumber');
+  const mazeViewport = mazeElement?.parentElement;
 
-  if (!mazeElement || !resetButton || !statusBox || !statusElement || !moveElement || !mazeNumberElement) return;
+  if (!mazeElement || !mazeViewport || !resetButton || !statusBox || !statusElement || !moveElement || !mazeNumberElement) return;
 
   function createMaze(seed) {
     const size = 21;
@@ -178,6 +179,14 @@ function setupMazeGame() {
         mazeElement.append(tile);
       });
     });
+
+    const tileSize = mazeElement.querySelector('.maze-tile').getBoundingClientRect().width;
+    const mazeWidth = maze[0].length * tileSize;
+    const mazeHeight = maze.length * tileSize;
+    const cameraX = Math.min(0, Math.max(mazeViewport.clientWidth - mazeWidth, mazeViewport.clientWidth / 2 - (player.column + 0.5) * tileSize));
+    const cameraY = Math.min(0, Math.max(mazeViewport.clientHeight - mazeHeight, mazeViewport.clientHeight / 2 - (player.row + 0.5) * tileSize));
+    mazeElement.style.setProperty('--camera-x', `${cameraX}px`);
+    mazeElement.style.setProperty('--camera-y', `${cameraY}px`);
 
     moveElement.textContent = `Moves: ${moves}`;
     mazeNumberElement.textContent = `Maze ${mazeIndex + 1} / ${mazes.length}`;

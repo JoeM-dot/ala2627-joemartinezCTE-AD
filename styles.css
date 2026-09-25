@@ -202,17 +202,29 @@ kbd {
   text-transform: uppercase;
 }
 
+:root {
+  --maze-tile-size: clamp(28px, 4vw, 40px);
+}
+
 .maze-shell {
   position: relative;
+  width: min(100%, calc(var(--maze-tile-size) * 11));
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 3px solid #111;
+  background: #fff;
 }
 
 .maze {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: grid;
-  grid-template-columns: repeat(var(--maze-columns), 1fr);
-  border: 3px solid #111;
+  grid-template-columns: repeat(var(--maze-columns), var(--maze-tile-size));
+  width: max-content;
   outline: none;
-  aspect-ratio: 1 / 1;
-  background: #fff;
+  transform: translate3d(var(--camera-x, 0px), var(--camera-y, 0px), 0);
+  transition: transform 160ms ease-out;
 }
 
 .game-status {
@@ -242,13 +254,14 @@ kbd {
 }
 
 .maze:focus-visible {
-  box-shadow: 0 0 0 4px #bbb;
+  outline: 4px solid #bbb;
+  outline-offset: -4px;
 }
 
 .maze-tile {
   display: grid;
-  min-width: 0;
-  aspect-ratio: 1;
+  width: var(--maze-tile-size);
+  height: var(--maze-tile-size);
   place-items: center;
   font: 700 clamp(16px, 3vw, 28px) Georgia, serif;
 }
