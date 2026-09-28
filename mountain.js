@@ -76,8 +76,7 @@ function drawMountain() {
 
   const radius = width / (window.innerWidth < 760 ? 19 : 34);
   const horizontalStep = radius * 1.5;
-  const rowStep = radius * 1.4;
-  const depth = radius * 0.52;
+  const rowStep = radius * Math.sqrt(3);
   const columns = Math.ceil(width / horizontalStep) + 2;
   const rows = Math.max(7, Math.ceil(height / rowStep) + 3);
   const mountainBase = height * 0.8;
@@ -97,6 +96,7 @@ function drawMountain() {
       const elevation = Math.pow(Math.min(1, ridge + secondaryRidge + roughness), 1.35);
       const heightInLevels = Math.max(0, Math.round(elevation * peakHeight / heightUnit));
       const y = mountainBase + row * rowStep - heightInLevels * heightUnit;
+      const columnDepth = Math.max(radius * 0.12, heightInLevels * heightUnit);
       const colorShift = Math.min(1, distance * 0.7 + elevation * 0.45);
       const shade = {
         top: colorShift > 0.78 ? '#687b72' : '#496159',
@@ -105,12 +105,23 @@ function drawMountain() {
       };
       const snowLine = peakHeight * 0.66;
       const isSnow = heightInLevels * heightUnit > snowLine && random() > 0.22;
-      paintHexColumn(x, y, radius, depth, shade, isSnow);
+      paintHexColumn(x, y, radius, columnDepth, shade, isSnow);
     }
   }
 
-  context.fillStyle = 'rgba(20, 39, 43, 0.28)';
-  context.fillRect(0, height * 0.92, width, height * 0.08);
+  const ground = context.createLinearGradient(0, height * 0.88, 0, height);
+  ground.addColorStop(0, '#587d53');
+  ground.addColorStop(1, '#294b3d');
+  context.beginPath();
+  context.moveTo(0, height * 0.91);
+  for (let step = 1; step <= 8; step += 1) {
+    context.lineTo((width * step) / 8, height * (0.89 + random() * 0.035));
+  }
+  context.lineTo(width, height);
+  context.lineTo(0, height);
+  context.closePath();
+  context.fillStyle = ground;
+  context.fill();
 }
 
 function generateMountain() {

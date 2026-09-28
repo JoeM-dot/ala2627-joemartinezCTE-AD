@@ -341,8 +341,7 @@ kbd {
 .mountain-frame {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10;
-  min-height: 420px;
+  height: clamp(320px, 56vh, 620px);
   overflow: hidden;
   border: 1px solid rgba(232, 239, 226, 0.22);
   background: #283c3b;
@@ -401,8 +400,7 @@ kbd {
   }
 
   .mountain-frame {
-    aspect-ratio: 3 / 4;
-    min-height: 460px;
+    height: clamp(300px, 52vh, 460px);
   }
 }
 
