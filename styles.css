@@ -204,9 +204,7 @@ kbd {
 
 .maze-counter-link {
   color: inherit;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
+  text-decoration: none;
 }
 
 .maze-counter-link:hover {
