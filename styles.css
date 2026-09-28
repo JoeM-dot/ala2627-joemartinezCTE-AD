@@ -251,7 +251,7 @@ kbd {
   --mountain-muted: #829294;
   --mountain-line: rgba(232, 239, 226, 0.2);
   min-height: 100vh;
-  padding: 30px clamp(20px, 5vw, 76px) 48px;
+  padding: 36px clamp(30px, 6vw, 104px) 56px;
   color: #eef0e8;
   background: #14272b;
   font-family: var(--font-sans);
@@ -276,7 +276,7 @@ kbd {
 }
 
 .mountain-content {
-  width: min(100%, 1400px);
+  width: min(100%, 1600px);
   margin: 0 auto;
   padding-top: clamp(48px, 9vh, 100px);
 }
@@ -341,8 +341,8 @@ kbd {
 .mountain-frame {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 8.5;
-  min-height: 340px;
+  aspect-ratio: 16 / 10;
+  min-height: 420px;
   overflow: hidden;
   border: 1px solid rgba(232, 239, 226, 0.22);
   background: #283c3b;
@@ -377,7 +377,7 @@ kbd {
 
 @media (max-width: 760px) {
   .mountain-page {
-    padding: 20px 18px 32px;
+    padding: 24px 24px 36px;
   }
 
   .mountain-header {
@@ -401,8 +401,8 @@ kbd {
   }
 
   .mountain-frame {
-    aspect-ratio: 4 / 5;
-    min-height: 420px;
+    aspect-ratio: 3 / 4;
+    min-height: 460px;
   }
 }
 
