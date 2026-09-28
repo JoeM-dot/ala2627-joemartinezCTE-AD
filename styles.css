@@ -246,6 +246,166 @@ kbd {
   line-height: 1.6;
 }
 
+.mountain-page {
+  --mountain-ink: #182c32;
+  --mountain-muted: #829294;
+  --mountain-line: rgba(232, 239, 226, 0.2);
+  min-height: 100vh;
+  padding: 30px clamp(20px, 5vw, 76px) 48px;
+  color: #eef0e8;
+  background: #14272b;
+  font-family: var(--font-sans);
+}
+
+.mountain-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--mountain-line);
+}
+
+.mountain-header .game-example-back {
+  color: #bdc9bf;
+}
+
+.mountain-header .game-kicker,
+.mountain-heading .game-kicker {
+  margin: 0;
+  color: #b8c2a7;
+}
+
+.mountain-content {
+  width: min(100%, 1400px);
+  margin: 0 auto;
+  padding-top: clamp(48px, 9vh, 100px);
+}
+
+.mountain-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 32px;
+}
+
+.mountain-heading h1 {
+  margin: 12px 0 10px;
+  color: #f3f0df;
+  font-family: Georgia, serif;
+  font-size: clamp(2.8rem, 7vw, 6rem);
+  font-weight: 400;
+  line-height: 0.95;
+}
+
+.mountain-description {
+  margin: 0;
+  color: #bac6bf;
+  font-size: 14px;
+}
+
+.mountain-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: end;
+  gap: 18px;
+}
+
+.mountain-seed {
+  color: #b8c2a7;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.mountain-generate {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid #bdc99f;
+  color: #15292d;
+  background: #bdc99f;
+  cursor: pointer;
+  font: 700 11px var(--font-sans);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mountain-generate:hover,
+.mountain-generate:focus-visible {
+  color: #eef0e8;
+  background: transparent;
+}
+
+.mountain-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 8.5;
+  min-height: 340px;
+  overflow: hidden;
+  border: 1px solid rgba(232, 239, 226, 0.22);
+  background: #283c3b;
+}
+
+.mountain-frame canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.mountain-horizon {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: rgba(238, 240, 232, 0.5);
+  pointer-events: none;
+}
+
+.mountain-caption {
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  color: rgba(238, 240, 232, 0.8);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .mountain-page {
+    padding: 20px 18px 32px;
+  }
+
+  .mountain-header {
+    align-items: flex-start;
+    flex-direction: column-reverse;
+    gap: 18px;
+  }
+
+  .mountain-content {
+    padding-top: 48px;
+  }
+
+  .mountain-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .mountain-controls {
+    justify-content: flex-start;
+  }
+
+  .mountain-frame {
+    aspect-ratio: 4 / 5;
+    min-height: 420px;
+  }
+}
+
 :root {
   --maze-tile-size: clamp(28px, 4vw, 40px);
 }

@@ -4,8 +4,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hidden Page | Joe M</title>
-  <meta name="description" content="A hidden page discovered from the maze." />
+  <title>Mountain Field | Joe M</title>
+  <meta name="description" content="A randomly generated mountain landscape built from hexagonal columns." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -15,14 +15,34 @@
 </head>
 
 <body>
-  <main class="secret-page">
-    <section class="secret-message">
-      <p class="game-kicker">Unknown Room // 01</p>
-      <h1>You found it.</h1>
-      <p>This page was hiding just beyond the maze counter. Some paths lead somewhere unexpected.</p>
+  <main class="mountain-page">
+    <header class="mountain-header">
       <a class="game-example-back" href="game-example.html">&larr; Return to the maze</a>
+      <p class="game-kicker">Field Study // 01</p>
+    </header>
+
+    <section class="mountain-content" aria-labelledby="mountain-title">
+      <div class="mountain-heading">
+        <div>
+          <p class="game-kicker">Procedural terrain</p>
+          <h1 id="mountain-title">The high country.</h1>
+          <p class="mountain-description">A new range, assembled from hexagonal stone.</p>
+        </div>
+        <div class="mountain-controls">
+          <span class="mountain-seed" id="mountainSeed">SEED / --------</span>
+          <button class="mountain-generate" id="generateMountain" type="button">Generate new mountain</button>
+        </div>
+      </div>
+
+      <div class="mountain-frame">
+        <canvas id="mountainCanvas" role="img"
+          aria-label="A procedurally generated mountain made from hexagonal columns"></canvas>
+        <div class="mountain-horizon" aria-hidden="true"></div>
+        <span class="mountain-caption">NORTH-FACING ELEVATION</span>
+      </div>
     </section>
   </main>
+  <script src="mountain.js"></script>
 </body>
 
 </html>
