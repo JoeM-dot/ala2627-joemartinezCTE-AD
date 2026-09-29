@@ -12,42 +12,6 @@ function createRandom(seed) {
   };
 }
 
-function hexPath(x, y, radiusX, radiusY) {
-  const points = Array.from({ length: 6 }, (_, index) => {
-    const angle = (Math.PI / 3) * index;
-    return [x + Math.cos(angle) * radiusX, y + Math.sin(angle) * radiusY];
-  });
-  context.beginPath();
-  context.moveTo(points[0][0], points[0][1]);
-  points.slice(1).forEach(([pointX, pointY]) => context.lineTo(pointX, pointY));
-  context.closePath();
-  return points;
-}
-
-function paintHexColumn(x, y, radiusX, radiusY, depth, shade, isSnow) {
-  const points = hexPath(x, y, radiusX, radiusY);
-  const frontFaces = [[0, 1, shade.left], [1, 2, shade.right], [2, 3, shade.left]];
-  frontFaces.forEach(([startIndex, endIndex, color]) => {
-    const start = points[startIndex];
-    const end = points[endIndex];
-    context.beginPath();
-    context.moveTo(start[0], start[1]);
-    context.lineTo(end[0], end[1]);
-    context.lineTo(end[0], end[1] + depth);
-    context.lineTo(start[0], start[1] + depth);
-    context.closePath();
-    context.fillStyle = isSnow ? '#87948e' : color;
-    context.fill();
-  });
-
-  hexPath(x, y, radiusX, radiusY);
-  context.fillStyle = isSnow ? '#d5d6c3' : shade.top;
-  context.fill();
-  context.strokeStyle = 'rgba(17, 37, 39, 0.38)';
-  context.lineWidth = Math.max(0.7, radius * 0.035);
-  context.stroke();
-}
-
 function drawMountain() {
   const bounds = canvas.getBoundingClientRect();
   if (!bounds.width || !bounds.height) return;
@@ -74,40 +38,40 @@ function drawMountain() {
     context.fillRect(starX, starY, random() * 1.5 + 0.5, random() * 1.5 + 0.5);
   }
 
-  const radius = width / (window.innerWidth < 760 ? 19 : 34);
-  const radiusX = radius * 0.58;
-  const horizontalStep = radiusX * 1.5;
-  const rowStep = radius * Math.sqrt(3);
-  const columns = Math.ceil(width / horizontalStep) + 2;
-  const rows = Math.max(7, Math.ceil(height / rowStep) + 3);
-  const mountainBase = height * 0.8;
-  const heightUnit = Math.min(radius * 0.9, height / 18);
+  const blockWidth = width / (window.innerWidth < 760 ? 35 : 85);
+  const blockHeight = blockWidth * 2.8;
+  const columns = Math.ceil(width / blockWidth);
+  const mountainBase = height * 0.92;
   const peakX = width * (0.36 + random() * 0.28);
   const peakWidth = width * (0.18 + random() * 0.08);
   const peakHeight = height * (0.42 + random() * 0.15);
-  const noise = Array.from({ length: columns + 2 }, () => random());
+  const snowLine = peakHeight * 0.66;
+  const noise = Array.from({ length: columns }, () => random());
 
-  for (let row = 0; row < rows; row += 1) {
-    const distance = row / Math.max(1, rows - 1);
-    for (let column = -1; column < columns; column += 1) {
-      const x = column * horizontalStep;
-      const columnOffset = column % 2 === 0 ? 0 : rowStep / 2;
-      const ridge = Math.max(0, 1 - Math.abs(x - peakX) / peakWidth);
-      const secondaryRidge = Math.max(0, 1 - Math.abs(x - width * 0.19) / (width * 0.16)) * 0.42;
-      const roughness = noise[column + 1] * 0.16 + random() * 0.12;
-      const elevation = Math.pow(Math.min(1, ridge + secondaryRidge + roughness), 1.35);
-      const heightInLevels = Math.max(0, Math.round(elevation * peakHeight / heightUnit));
-      const y = mountainBase + row * rowStep + columnOffset - heightInLevels * heightUnit;
-      const columnDepth = Math.max(radius * 0.12, heightInLevels * heightUnit);
-      const colorShift = Math.min(1, distance * 0.7 + elevation * 0.45);
-      const shade = {
-        top: colorShift > 0.78 ? '#687b72' : '#496159',
-        left: colorShift > 0.78 ? '#526962' : '#354e49',
-        right: colorShift > 0.78 ? '#3c5550' : '#263e3c'
-      };
-      const snowLine = peakHeight * 0.66;
-      const isSnow = heightInLevels * heightUnit > snowLine && random() > 0.22;
-      paintHexColumn(x, y, radiusX, radius, columnDepth, shade, isSnow);
+  for (let column = 0; column < columns; column += 1) {
+    const x = column * blockWidth;
+    const ridge = Math.max(0, 1 - Math.abs(x - peakX) / peakWidth);
+    const secondaryRidge = Math.max(0, 1 - Math.abs(x - width * 0.19) / (width * 0.16)) * 0.42;
+    const roughness = noise[column] * 0.16 + random() * 0.12;
+    const elevation = Math.pow(Math.min(1, ridge + secondaryRidge + roughness), 1.35);
+    const heightInBlocks = Math.max(1, Math.round(elevation * peakHeight / blockHeight));
+    const hasSnow = heightInBlocks * blockHeight > snowLine && random() > 0.22;
+
+    for (let level = 0; level < heightInBlocks; level += 1) {
+      const y = mountainBase - (level + 1) * blockHeight;
+      const heightRatio = level / heightInBlocks;
+      const isSnow = hasSnow && level >= heightInBlocks - 2;
+      context.fillStyle = isSnow
+        ? '#d5d6c3'
+        : heightRatio > 0.72
+          ? '#526962'
+          : heightRatio > 0.38
+            ? '#354e49'
+            : '#263e3c';
+      context.fillRect(x, y, blockWidth + 0.6, blockHeight + 0.6);
+      context.strokeStyle = 'rgba(17, 37, 39, 0.38)';
+      context.lineWidth = 0.55;
+      context.strokeRect(x, y, blockWidth + 0.6, blockHeight + 0.6);
     }
   }
 
