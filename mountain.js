@@ -12,6 +12,39 @@ function createRandom(seed) {
   };
 }
 
+function drawHold(centerX, centerY, size, direction) {
+  const halfSize = size / 2;
+  const points = {
+    left: [[centerX - halfSize, centerY], [centerX + halfSize, centerY - halfSize], [centerX + halfSize, centerY + halfSize]],
+    right: [[centerX + halfSize, centerY], [centerX - halfSize, centerY - halfSize], [centerX - halfSize, centerY + halfSize]],
+    up: [[centerX, centerY - halfSize], [centerX + halfSize, centerY + halfSize], [centerX - halfSize, centerY + halfSize]],
+    down: [[centerX, centerY + halfSize], [centerX + halfSize, centerY - halfSize], [centerX - halfSize, centerY - halfSize]]
+  }[direction];
+
+  context.beginPath();
+  context.moveTo(points[0][0], points[0][1]);
+  context.lineTo(points[1][0], points[1][1]);
+  context.lineTo(points[2][0], points[2][1]);
+  context.closePath();
+  context.fillStyle = {
+    left: '#1b2d2d',
+    right: '#c2cbb9',
+    up: '#74867b',
+    down: '#465d57'
+  }[direction];
+  context.fill();
+  context.strokeStyle = '#172d30';
+  context.lineWidth = 1;
+  context.stroke();
+
+  context.beginPath();
+  context.moveTo(points[0][0], points[0][1]);
+  context.lineTo(centerX, centerY);
+  context.strokeStyle = direction === 'right' ? '#e1e5d6' : '#102526';
+  context.lineWidth = Math.max(1, size * 0.07);
+  context.stroke();
+}
+
 function drawStickFigure(playerX, playerY, height) {
   const scale = height * 0.2;
   const headX = playerX + scale * 0.01;
@@ -78,8 +111,8 @@ function drawCliffFace() {
   }
 
   const cliffLeft = width * 0.6;
-  const cliffWidth = width * 0.25;
-  const cliffRight = cliffLeft + cliffWidth;
+  const cliffRight = width;
+  const cliffWidth = cliffRight - cliffLeft;
   const blockWidth = cliffWidth / 4.5;
   const blockHeight = height / 12;
   const horizontalStep = blockWidth * 0.78;
@@ -88,6 +121,7 @@ function drawCliffFace() {
   const centerRow = (rows - 1) / 2;
   const edgeNoise = Array.from({ length: rows }, () => random());
   const rockColors = ['#263e3c', '#354e49', '#496159', '#526962', '#687b72'];
+  const holds = [];
 
   for (let row = 0; row < rows; row += 1) {
     const edgeX = cliffLeft + (edgeNoise[row] - 0.5) * blockWidth * 0.5;
@@ -115,9 +149,20 @@ function drawCliffFace() {
         context.fillStyle = '#87948e';
         context.fillRect(x, y, rectWidth, 2);
       }
+
+      if (random() < 0.22) {
+        const directions = ['left', 'right', 'up', 'down'];
+        holds.push({
+          x: x + rectWidth * (0.35 + random() * 0.3),
+          y: y + rectHeight * (0.35 + random() * 0.3),
+          size: Math.min(blockWidth, blockHeight) * 0.33,
+          direction: directions[Math.floor(random() * directions.length)]
+        });
+      }
     }
   }
 
+  holds.forEach(({ x, y, size, direction }) => drawHold(x, y, size, direction));
   drawStickFigure(width * 0.49, height * 0.52, height);
 }
 
