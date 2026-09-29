@@ -340,8 +340,10 @@ kbd {
 
 .mountain-frame {
   position: relative;
-  width: 100%;
-  height: clamp(320px, 56vh, 620px);
+  width: min(100%, 920px);
+  height: auto;
+  aspect-ratio: 1.2 / 1;
+  margin-inline: auto;
   overflow: hidden;
   border: 1px solid rgba(232, 239, 226, 0.22);
   background: #283c3b;
@@ -399,9 +401,6 @@ kbd {
     justify-content: flex-start;
   }
 
-  .mountain-frame {
-    height: clamp(300px, 52vh, 460px);
-  }
 }
 
 :root {

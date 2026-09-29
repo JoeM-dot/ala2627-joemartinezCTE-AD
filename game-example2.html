@@ -4,8 +4,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mountain Field | Joe M</title>
-  <meta name="description" content="A randomly generated mountain landscape built from hexagonal columns." />
+  <title>Cliff Face | Joe M</title>
+  <meta name="description" content="A randomly generated cliff face built from overlapping stone ledges." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -24,21 +24,21 @@
     <section class="mountain-content" aria-labelledby="mountain-title">
       <div class="mountain-heading">
         <div>
-          <p class="game-kicker">Procedural terrain</p>
-          <h1 id="mountain-title">The high country.</h1>
-          <p class="mountain-description">A new range, assembled from hexagonal stone.</p>
+          <p class="game-kicker">Procedural cliff face</p>
+          <h1 id="mountain-title">The long ascent.</h1>
+          <p class="mountain-description">A sheer face of stone, built from overlapping ledges.</p>
         </div>
         <div class="mountain-controls">
           <span class="mountain-seed" id="mountainSeed">SEED / --------</span>
-          <button class="mountain-generate" id="generateMountain" type="button">Generate new mountain</button>
+          <button class="mountain-generate" id="generateMountain" type="button">Generate new cliff</button>
         </div>
       </div>
 
       <div class="mountain-frame">
         <canvas id="mountainCanvas" role="img"
-          aria-label="A procedurally generated mountain made from hexagonal columns"></canvas>
+          aria-label="A side view of a procedurally generated cliff face made from overlapping rectangular ledges"></canvas>
         <div class="mountain-horizon" aria-hidden="true"></div>
-        <span class="mountain-caption">NORTH-FACING ELEVATION</span>
+        <span class="mountain-caption">CLIFF FACE // CLIMBING ROUTE</span>
       </div>
     </section>
   </main>

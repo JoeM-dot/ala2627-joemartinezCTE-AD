@@ -12,7 +12,7 @@ function createRandom(seed) {
   };
 }
 
-function drawMountain() {
+function drawCliffFace() {
   const bounds = canvas.getBoundingClientRect();
   if (!bounds.width || !bounds.height) return;
 
@@ -38,40 +38,44 @@ function drawMountain() {
     context.fillRect(starX, starY, random() * 1.5 + 0.5, random() * 1.5 + 0.5);
   }
 
-  const blockWidth = width / (window.innerWidth < 760 ? 35 : 85);
-  const blockHeight = blockWidth * 2.8;
-  const columns = Math.ceil(width / blockWidth);
-  const mountainBase = height * 0.92;
-  const peakX = width * (0.36 + random() * 0.28);
-  const peakWidth = width * (0.18 + random() * 0.08);
-  const peakHeight = height * (0.42 + random() * 0.15);
-  const snowLine = peakHeight * 0.66;
-  const noise = Array.from({ length: columns }, () => random());
+  const blockWidth = width / 18;
+  const blockHeight = height / 12;
+  const horizontalStep = blockWidth * 0.78;
+  const verticalStep = blockHeight * 0.76;
+  const cliffBase = height * 0.96;
+  const cliffTop = height * 0.12;
+  const rows = Math.ceil((cliffBase - cliffTop - blockHeight) / verticalStep) + 1;
+  const edgeNoise = Array.from({ length: rows }, () => random());
+  const rockColors = ['#263e3c', '#354e49', '#496159', '#526962', '#687b72'];
 
-  for (let column = 0; column < columns; column += 1) {
-    const x = column * blockWidth;
-    const ridge = Math.max(0, 1 - Math.abs(x - peakX) / peakWidth);
-    const secondaryRidge = Math.max(0, 1 - Math.abs(x - width * 0.19) / (width * 0.16)) * 0.42;
-    const roughness = noise[column] * 0.16 + random() * 0.12;
-    const elevation = Math.pow(Math.min(1, ridge + secondaryRidge + roughness), 1.35);
-    const heightInBlocks = Math.max(1, Math.round(elevation * peakHeight / blockHeight));
-    const hasSnow = heightInBlocks * blockHeight > snowLine && random() > 0.22;
+  for (let row = 0; row < rows; row += 1) {
+    const progress = row / Math.max(1, rows - 1);
+    const edgeX = width * (0.16 + progress * 0.12)
+      + (edgeNoise[row] - 0.5) * blockWidth * 0.36;
+    const y = cliffBase - blockHeight - row * verticalStep;
+    const rowOffset = row % 2 ? horizontalStep / 2 : 0;
+    const startX = edgeX - rowOffset;
+    const blocks = Math.ceil((width - startX) / horizontalStep) + 1;
 
-    for (let level = 0; level < heightInBlocks; level += 1) {
-      const y = mountainBase - (level + 1) * blockHeight;
-      const heightRatio = level / heightInBlocks;
-      const isSnow = hasSnow && level >= heightInBlocks - 2;
-      context.fillStyle = isSnow
-        ? '#d5d6c3'
-        : heightRatio > 0.72
-          ? '#526962'
-          : heightRatio > 0.38
-            ? '#354e49'
-            : '#263e3c';
-      context.fillRect(x, y, blockWidth + 0.6, blockHeight + 0.6);
-      context.strokeStyle = 'rgba(17, 37, 39, 0.38)';
-      context.lineWidth = 0.55;
-      context.strokeRect(x, y, blockWidth + 0.6, blockHeight + 0.6);
+    for (let column = 0; column < blocks; column += 1) {
+      const isLedge = column === 0 && row % 3 === 1;
+      const x = isLedge
+        ? edgeX - blockWidth * (0.5 + random() * 0.3)
+        : startX + column * horizontalStep;
+      const rectWidth = isLedge
+        ? blockWidth * 1.8
+        : blockWidth * (0.95 + random() * 0.18);
+      const rectHeight = blockHeight * (0.92 + random() * 0.18);
+      context.fillStyle = rockColors[Math.floor(random() * rockColors.length)];
+      context.fillRect(x, y, rectWidth, rectHeight);
+      context.strokeStyle = 'rgba(17, 37, 39, 0.48)';
+      context.lineWidth = 1;
+      context.strokeRect(x, y, rectWidth, rectHeight);
+
+      if (isLedge) {
+        context.fillStyle = '#87948e';
+        context.fillRect(x, y, rectWidth, 2);
+      }
     }
   }
 
@@ -90,14 +94,14 @@ function drawMountain() {
   context.fill();
 }
 
-function generateMountain() {
+function generateCliff() {
   currentSeed = Math.floor(Math.random() * 100_000_000);
   seedLabel.textContent = `SEED / ${String(currentSeed).padStart(8, '0')}`;
-  drawMountain();
+  drawCliffFace();
 }
 
-generateButton.addEventListener('click', generateMountain);
-const resizeObserver = new ResizeObserver(drawMountain);
+generateButton.addEventListener('click', generateCliff);
+const resizeObserver = new ResizeObserver(drawCliffFace);
 resizeObserver.observe(canvas);
 seedLabel.textContent = `SEED / ${String(currentSeed).padStart(8, '0')}`;
-drawMountain();
+drawCliffFace();
