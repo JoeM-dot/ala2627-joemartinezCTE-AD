@@ -6,7 +6,30 @@ const context = canvas.getContext('2d');
 
 let currentSeed = Math.floor(Math.random() * 100_000_000);
 let playerAltitude = 0;
+let playerXPosition = 0.49;
+let walkingPhase = 0;
+let lastPlayerFrame = null;
+let playerFrameRequest = 0;
+const heldKeys = new Set();
+const armPose = {
+  leftUpper: -0.65,
+  leftForearm: -0.2,
+  rightUpper: 0.65,
+  rightForearm: 0.2
+};
 const goalAltitude = 1000;
+const controlActions = {
+  KeyA: { type: 'walk', value: -1 },
+  KeyD: { type: 'walk', value: 1 },
+  KeyW: { type: 'arm', joint: 'leftUpper', value: -1 },
+  KeyS: { type: 'arm', joint: 'leftUpper', value: 1 },
+  KeyE: { type: 'arm', joint: 'leftForearm', value: -1 },
+  KeyR: { type: 'arm', joint: 'leftForearm', value: 1 },
+  KeyI: { type: 'arm', joint: 'rightUpper', value: -1 },
+  KeyK: { type: 'arm', joint: 'rightUpper', value: 1 },
+  KeyO: { type: 'arm', joint: 'rightForearm', value: -1 },
+  KeyP: { type: 'arm', joint: 'rightForearm', value: 1 }
+};
 
 function createRandom(seed) {
   return () => {
@@ -48,7 +71,7 @@ function drawHold(centerX, centerY, size, direction) {
   context.stroke();
 }
 
-function drawStickFigure(playerX, playerY, height) {
+function drawStickFigure(playerX, playerY, height, gaitPhase) {
   const scale = height * 0.2;
   const headX = playerX + scale * 0.01;
   const headY = playerY - scale * 0.34;
@@ -56,19 +79,54 @@ function drawStickFigure(playerX, playerY, height) {
   const shoulderY = playerY - scale * 0.16;
   const hipY = playerY + scale * 0.16;
 
+  function drawSegment(startX, startY, endX, endY) {
+    context.beginPath();
+    context.moveTo(startX, startY);
+    context.lineTo(endX, endY);
+    context.strokeStyle = '#172d30';
+    context.lineWidth = Math.max(4, scale * 0.11);
+    context.lineCap = 'round';
+    context.stroke();
+    context.beginPath();
+    context.moveTo(startX, startY);
+    context.lineTo(endX, endY);
+    context.strokeStyle = '#e8e5d4';
+    context.lineWidth = Math.max(2.5, scale * 0.06);
+    context.stroke();
+  }
+
+  function pointAlongArm(startX, startY, length, angle) {
+    return {
+      x: startX + Math.sin(angle) * length,
+      y: startY + Math.cos(angle) * length
+    };
+  }
+
+  function drawArm(startX, upperAngle, forearmAngle) {
+    const elbow = pointAlongArm(startX, shoulderY, scale * 0.25, upperAngle);
+    const wrist = pointAlongArm(elbow.x, elbow.y, scale * 0.24, upperAngle + forearmAngle);
+    const hand = pointAlongArm(wrist.x, wrist.y, scale * 0.09, upperAngle + forearmAngle);
+    drawSegment(startX, shoulderY, elbow.x, elbow.y);
+    drawSegment(elbow.x, elbow.y, wrist.x, wrist.y);
+    drawSegment(wrist.x, wrist.y, hand.x, hand.y);
+    context.beginPath();
+    context.arc(elbow.x, elbow.y, scale * 0.045, 0, Math.PI * 2);
+    context.fillStyle = '#e8e5d4';
+    context.fill();
+    context.strokeStyle = '#172d30';
+    context.lineWidth = Math.max(1.5, scale * 0.035);
+    context.stroke();
+  }
+
+  const stride = Math.sin(gaitPhase) * scale * 0.2;
+  const lift = Math.max(0, Math.cos(gaitPhase)) * scale * 0.05;
   context.beginPath();
   context.moveTo(headX, headY + headRadius);
   context.lineTo(playerX, hipY);
-  context.moveTo(playerX, shoulderY);
-  context.lineTo(playerX + scale * 0.23, playerY - scale * 0.32);
-  context.lineTo(playerX + scale * 0.35, playerY - scale * 0.27);
-  context.moveTo(playerX, shoulderY);
-  context.lineTo(playerX - scale * 0.2, playerY - scale * 0.02);
-  context.lineTo(playerX - scale * 0.31, playerY - scale * 0.12);
   context.moveTo(playerX, hipY);
-  context.lineTo(playerX + scale * 0.2, playerY + scale * 0.43);
+  context.lineTo(playerX + stride, playerY + scale * 0.43 - lift);
   context.moveTo(playerX, hipY);
-  context.lineTo(playerX - scale * 0.17, playerY + scale * 0.48);
+  context.lineTo(playerX - stride, playerY + scale * 0.48 - (scale * 0.05 - lift));
   context.strokeStyle = '#172d30';
   context.lineWidth = Math.max(4, scale * 0.11);
   context.lineCap = 'round';
@@ -77,6 +135,9 @@ function drawStickFigure(playerX, playerY, height) {
   context.strokeStyle = '#e8e5d4';
   context.lineWidth = Math.max(2.5, scale * 0.06);
   context.stroke();
+
+  drawArm(playerX - scale * 0.08, armPose.leftUpper, armPose.leftForearm);
+  drawArm(playerX + scale * 0.08, armPose.rightUpper, armPose.rightForearm);
 
   context.beginPath();
   context.arc(headX, headY, headRadius, 0, Math.PI * 2);
@@ -98,6 +159,7 @@ function drawCliffFace() {
 
   const width = bounds.width;
   const height = bounds.height;
+  playerXPosition = Math.max(0.04, Math.min(0.96, playerXPosition));
   const random = createRandom(currentSeed);
   const worldScale = height / 400;
   const playerFootY = height * 0.72;
@@ -223,8 +285,53 @@ function drawCliffFace() {
   }
 
   holds.forEach(({ x, y, size, direction }) => drawHold(x, y, size, direction));
-  drawStickFigure(width * 0.49, playerFootY - height * 0.2 * 0.48, height);
+  drawStickFigure(width * playerXPosition, playerFootY - height * 0.2 * 0.48, height, walkingPhase);
 }
+
+function updatePlayer(timestamp) {
+  const elapsed = lastPlayerFrame === null ? 0 : Math.min((timestamp - lastPlayerFrame) / 1000, 0.05);
+  lastPlayerFrame = timestamp;
+  const walkingDirection = [...heldKeys]
+    .map((code) => controlActions[code])
+    .filter((action) => action?.type === 'walk')
+    .reduce((direction, action) => direction + action.value, 0);
+  const bounds = canvas.getBoundingClientRect();
+
+  if (walkingDirection && bounds.width) {
+    playerXPosition += walkingDirection * elapsed * 0.42;
+    walkingPhase += elapsed * 9;
+  }
+
+  for (const code of heldKeys) {
+    const action = controlActions[code];
+    if (action?.type === 'arm') {
+      armPose[action.joint] = Math.max(-2.5, Math.min(2.5, armPose[action.joint] + action.value * elapsed * 2.2));
+    }
+  }
+
+  drawCliffFace();
+  if (heldKeys.size) {
+    playerFrameRequest = requestAnimationFrame(updatePlayer);
+  } else {
+    playerFrameRequest = 0;
+    lastPlayerFrame = null;
+  }
+}
+
+function handlePlayerKeyDown(event) {
+  if (!controlActions[event.code]) return;
+  event.preventDefault();
+  heldKeys.add(event.code);
+  if (!playerFrameRequest) playerFrameRequest = requestAnimationFrame(updatePlayer);
+}
+
+function handlePlayerKeyUp(event) {
+  heldKeys.delete(event.code);
+}
+
+window.addEventListener('keydown', handlePlayerKeyDown);
+window.addEventListener('keyup', handlePlayerKeyUp);
+window.addEventListener('blur', () => heldKeys.clear());
 
 function generateCliff() {
   currentSeed = Math.floor(Math.random() * 100_000_000);
