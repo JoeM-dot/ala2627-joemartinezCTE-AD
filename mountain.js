@@ -150,13 +150,25 @@ function drawCliffFace() {
         context.fillRect(x, y, rectWidth, 2);
       }
 
-      if (random() < 0.22) {
+      if (random() < 0.32) {
         const directions = ['left', 'right', 'up', 'down'];
+        const direction = directions[Math.floor(random() * directions.length)];
+        const size = Math.min(blockWidth, blockHeight) * 0.33;
+        const holdX = direction === 'left'
+          ? x + size / 2
+          : direction === 'right'
+            ? x + rectWidth - size / 2
+            : x + size / 2 + random() * (rectWidth - size);
+        const holdY = direction === 'up'
+          ? y + size / 2
+          : direction === 'down'
+            ? y + rectHeight - size / 2
+            : y + size / 2 + random() * (rectHeight - size);
         holds.push({
-          x: x + rectWidth * (0.35 + random() * 0.3),
-          y: y + rectHeight * (0.35 + random() * 0.3),
-          size: Math.min(blockWidth, blockHeight) * 0.33,
-          direction: directions[Math.floor(random() * directions.length)]
+          x: holdX,
+          y: holdY,
+          size,
+          direction
         });
       }
     }
