@@ -1,9 +1,12 @@
 const canvas = document.querySelector('#mountainCanvas');
 const seedLabel = document.querySelector('#mountainSeed');
+const altitudeLabel = document.querySelector('#mountainAltitude');
 const generateButton = document.querySelector('#generateMountain');
 const context = canvas.getContext('2d');
 
 let currentSeed = Math.floor(Math.random() * 100_000_000);
+let playerAltitude = 0;
+const goalAltitude = 1000;
 
 function createRandom(seed) {
   return () => {
@@ -96,6 +99,12 @@ function drawCliffFace() {
   const width = bounds.width;
   const height = bounds.height;
   const random = createRandom(currentSeed);
+  const worldScale = height / 400;
+  const playerFootY = height * 0.72;
+  const altitudeToY = (altitude) => playerFootY - (altitude - playerAltitude) * worldScale;
+  if (altitudeLabel) {
+    altitudeLabel.textContent = `ALTITUDE ${String(playerAltitude).padStart(3, '0')} / ${goalAltitude}`;
+  }
   const sky = context.createLinearGradient(0, 0, 0, height);
   sky.addColorStop(0, '#263b3d');
   sky.addColorStop(0.56, '#71847a');
@@ -110,22 +119,37 @@ function drawCliffFace() {
     context.fillRect(starX, starY, random() * 1.5 + 0.5, random() * 1.5 + 0.5);
   }
 
+  const groundGradient = context.createLinearGradient(0, playerFootY, 0, height);
+  groundGradient.addColorStop(0, '#9a936f');
+  groundGradient.addColorStop(0.12, '#716b50');
+  groundGradient.addColorStop(1, '#383f35');
+  context.fillStyle = groundGradient;
+  context.fillRect(0, playerFootY, width, height - playerFootY);
+  context.fillStyle = 'rgba(213, 214, 195, 0.7)';
+  context.fillRect(0, playerFootY, width, 2);
+  for (let index = 0; index < 34; index += 1) {
+    const pebbleX = random() * width;
+    const pebbleY = playerFootY + 8 + random() * (height - playerFootY - 8);
+    context.fillStyle = `rgba(30, 43, 38, ${0.12 + random() * 0.2})`;
+    context.fillRect(pebbleX, pebbleY, 2 + random() * 5, 1 + random() * 2);
+  }
+
   const cliffLeft = width * 0.6;
   const cliffRight = width;
   const cliffWidth = cliffRight - cliffLeft;
   const blockWidth = cliffWidth / 4.5;
-  const blockHeight = height / 12;
+  const blockHeightWorld = 48;
+  const blockHeight = blockHeightWorld * worldScale;
   const horizontalStep = blockWidth * 0.78;
-  const verticalStep = blockHeight * 0.76;
-  const rows = Math.ceil((height * 3) / verticalStep);
-  const centerRow = (rows - 1) / 2;
+  const verticalStepWorld = 38;
+  const rows = Math.ceil(goalAltitude / verticalStepWorld) + 1;
   const edgeNoise = Array.from({ length: rows }, () => random());
   const rockColors = ['#263e3c', '#354e49', '#496159', '#526962', '#687b72'];
   const holds = [];
 
   for (let row = 0; row < rows; row += 1) {
     const edgeX = cliffLeft + (edgeNoise[row] - 0.5) * blockWidth * 0.5;
-    const y = height / 2 + (row - centerRow) * verticalStep;
+    const y = altitudeToY(row * verticalStepWorld + blockHeightWorld);
     const rowOffset = row % 2 ? horizontalStep / 2 : 0;
     const startX = edgeX - rowOffset;
     const blocks = Math.ceil((cliffRight - startX) / horizontalStep) + 1;
@@ -138,7 +162,7 @@ function drawCliffFace() {
       const rectWidth = isLedge
         ? blockWidth * 1.8
         : blockWidth * (0.95 + random() * 0.18);
-      const rectHeight = blockHeight * (0.92 + random() * 0.18);
+      const rectHeight = row === 0 ? blockHeight : blockHeight * (0.92 + random() * 0.18);
       context.fillStyle = rockColors[Math.floor(random() * rockColors.length)];
       context.fillRect(x, y, rectWidth, rectHeight);
       context.strokeStyle = 'rgba(17, 37, 39, 0.48)';
@@ -174,8 +198,32 @@ function drawCliffFace() {
     }
   }
 
+  const rulerX = width * 0.09;
+  const firstTick = Math.ceil(playerAltitude / 100) * 100;
+  const lastTick = Math.min(
+    goalAltitude,
+    Math.floor((playerAltitude + (playerFootY - 24) / worldScale) / 100) * 100
+  );
+  context.strokeStyle = 'rgba(232, 229, 212, 0.7)';
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(rulerX, altitudeToY(lastTick));
+  context.lineTo(rulerX, playerFootY);
+  context.stroke();
+  context.font = `${Math.max(10, width * 0.016)}px monospace`;
+  context.textBaseline = 'middle';
+  for (let altitude = firstTick; altitude <= lastTick; altitude += 100) {
+    const tickY = altitudeToY(altitude);
+    context.beginPath();
+    context.moveTo(rulerX - 5, tickY);
+    context.lineTo(rulerX + 5, tickY);
+    context.stroke();
+    context.fillStyle = 'rgba(238, 240, 232, 0.88)';
+    context.fillText(String(altitude), rulerX + 10, tickY);
+  }
+
   holds.forEach(({ x, y, size, direction }) => drawHold(x, y, size, direction));
-  drawStickFigure(width * 0.49, height * 0.52, height);
+  drawStickFigure(width * 0.49, playerFootY - height * 0.2 * 0.48, height);
 }
 
 function generateCliff() {

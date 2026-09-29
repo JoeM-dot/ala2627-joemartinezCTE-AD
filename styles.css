@@ -355,6 +355,19 @@ kbd {
   height: 100%;
 }
 
+.mountain-altitude {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  padding: 7px 9px;
+  border: 1px solid rgba(232, 239, 226, 0.35);
+  color: #eef0e8;
+  background: rgba(23, 45, 48, 0.78);
+  font: 700 10px var(--font-sans);
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
 .mountain-caption {
   position: absolute;
   right: 16px;
