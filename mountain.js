@@ -12,6 +12,45 @@ function createRandom(seed) {
   };
 }
 
+function drawStickFigure(playerX, playerY, height) {
+  const scale = height * 0.2;
+  const headX = playerX + scale * 0.01;
+  const headY = playerY - scale * 0.34;
+  const headRadius = scale * 0.14;
+  const shoulderY = playerY - scale * 0.16;
+  const hipY = playerY + scale * 0.16;
+
+  context.beginPath();
+  context.moveTo(headX, headY + headRadius);
+  context.lineTo(playerX, hipY);
+  context.moveTo(playerX, shoulderY);
+  context.lineTo(playerX + scale * 0.23, playerY - scale * 0.32);
+  context.lineTo(playerX + scale * 0.35, playerY - scale * 0.27);
+  context.moveTo(playerX, shoulderY);
+  context.lineTo(playerX - scale * 0.2, playerY - scale * 0.02);
+  context.lineTo(playerX - scale * 0.31, playerY - scale * 0.12);
+  context.moveTo(playerX, hipY);
+  context.lineTo(playerX + scale * 0.2, playerY + scale * 0.43);
+  context.moveTo(playerX, hipY);
+  context.lineTo(playerX - scale * 0.17, playerY + scale * 0.48);
+  context.strokeStyle = '#172d30';
+  context.lineWidth = Math.max(4, scale * 0.11);
+  context.lineCap = 'round';
+  context.lineJoin = 'round';
+  context.stroke();
+  context.strokeStyle = '#e8e5d4';
+  context.lineWidth = Math.max(2.5, scale * 0.06);
+  context.stroke();
+
+  context.beginPath();
+  context.arc(headX, headY, headRadius, 0, Math.PI * 2);
+  context.fillStyle = '#e8e5d4';
+  context.fill();
+  context.strokeStyle = '#172d30';
+  context.lineWidth = Math.max(1.5, scale * 0.04);
+  context.stroke();
+}
+
 function drawCliffFace() {
   const bounds = canvas.getBoundingClientRect();
   if (!bounds.width || !bounds.height) return;
@@ -38,24 +77,24 @@ function drawCliffFace() {
     context.fillRect(starX, starY, random() * 1.5 + 0.5, random() * 1.5 + 0.5);
   }
 
-  const blockWidth = width / 18;
+  const cliffLeft = width * 0.6;
+  const cliffWidth = width * 0.25;
+  const cliffRight = cliffLeft + cliffWidth;
+  const blockWidth = cliffWidth / 4.5;
   const blockHeight = height / 12;
   const horizontalStep = blockWidth * 0.78;
   const verticalStep = blockHeight * 0.76;
-  const cliffBase = height * 0.96;
-  const cliffTop = height * 0.12;
-  const rows = Math.ceil((cliffBase - cliffTop - blockHeight) / verticalStep) + 1;
+  const rows = Math.ceil((height * 3) / verticalStep);
+  const centerRow = (rows - 1) / 2;
   const edgeNoise = Array.from({ length: rows }, () => random());
   const rockColors = ['#263e3c', '#354e49', '#496159', '#526962', '#687b72'];
 
   for (let row = 0; row < rows; row += 1) {
-    const progress = row / Math.max(1, rows - 1);
-    const edgeX = width * (0.16 + progress * 0.12)
-      + (edgeNoise[row] - 0.5) * blockWidth * 0.36;
-    const y = cliffBase - blockHeight - row * verticalStep;
+    const edgeX = cliffLeft + (edgeNoise[row] - 0.5) * blockWidth * 0.5;
+    const y = height / 2 + (row - centerRow) * verticalStep;
     const rowOffset = row % 2 ? horizontalStep / 2 : 0;
     const startX = edgeX - rowOffset;
-    const blocks = Math.ceil((width - startX) / horizontalStep) + 1;
+    const blocks = Math.ceil((cliffRight - startX) / horizontalStep) + 1;
 
     for (let column = 0; column < blocks; column += 1) {
       const isLedge = column === 0 && row % 3 === 1;
@@ -79,19 +118,7 @@ function drawCliffFace() {
     }
   }
 
-  const ground = context.createLinearGradient(0, height * 0.88, 0, height);
-  ground.addColorStop(0, '#587d53');
-  ground.addColorStop(1, '#294b3d');
-  context.beginPath();
-  context.moveTo(0, height * 0.91);
-  for (let step = 1; step <= 8; step += 1) {
-    context.lineTo((width * step) / 8, height * (0.89 + random() * 0.035));
-  }
-  context.lineTo(width, height);
-  context.lineTo(0, height);
-  context.closePath();
-  context.fillStyle = ground;
-  context.fill();
+  drawStickFigure(width * 0.49, height * 0.52, height);
 }
 
 function generateCliff() {

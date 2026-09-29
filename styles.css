@@ -340,7 +340,7 @@ kbd {
 
 .mountain-frame {
   position: relative;
-  width: min(100%, 920px);
+  width: min(100%, 720px);
   height: auto;
   aspect-ratio: 1.2 / 1;
   margin-inline: auto;
@@ -353,16 +353,6 @@ kbd {
   display: block;
   width: 100%;
   height: 100%;
-}
-
-.mountain-horizon {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 1px;
-  background: rgba(238, 240, 232, 0.5);
-  pointer-events: none;
 }
 
 .mountain-caption {
