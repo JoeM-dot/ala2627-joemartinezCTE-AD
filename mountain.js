@@ -12,10 +12,10 @@ function createRandom(seed) {
   };
 }
 
-function hexPath(x, y, radius) {
+function hexPath(x, y, radiusX, radiusY) {
   const points = Array.from({ length: 6 }, (_, index) => {
     const angle = (Math.PI / 3) * index;
-    return [x + Math.cos(angle) * radius, y + Math.sin(angle) * radius];
+    return [x + Math.cos(angle) * radiusX, y + Math.sin(angle) * radiusY];
   });
   context.beginPath();
   context.moveTo(points[0][0], points[0][1]);
@@ -24,8 +24,8 @@ function hexPath(x, y, radius) {
   return points;
 }
 
-function paintHexColumn(x, y, radius, depth, shade, isSnow) {
-  const points = hexPath(x, y, radius);
+function paintHexColumn(x, y, radiusX, radiusY, depth, shade, isSnow) {
+  const points = hexPath(x, y, radiusX, radiusY);
   const frontFaces = [[0, 1, shade.left], [1, 2, shade.right], [2, 3, shade.left]];
   frontFaces.forEach(([startIndex, endIndex, color]) => {
     const start = points[startIndex];
@@ -40,7 +40,7 @@ function paintHexColumn(x, y, radius, depth, shade, isSnow) {
     context.fill();
   });
 
-  hexPath(x, y, radius);
+  hexPath(x, y, radiusX, radiusY);
   context.fillStyle = isSnow ? '#d5d6c3' : shade.top;
   context.fill();
   context.strokeStyle = 'rgba(17, 37, 39, 0.38)';
@@ -75,7 +75,8 @@ function drawMountain() {
   }
 
   const radius = width / (window.innerWidth < 760 ? 19 : 34);
-  const horizontalStep = radius * 1.5;
+  const radiusX = radius * 0.58;
+  const horizontalStep = radiusX * 1.5;
   const rowStep = radius * Math.sqrt(3);
   const columns = Math.ceil(width / horizontalStep) + 2;
   const rows = Math.max(7, Math.ceil(height / rowStep) + 3);
@@ -89,13 +90,14 @@ function drawMountain() {
   for (let row = 0; row < rows; row += 1) {
     const distance = row / Math.max(1, rows - 1);
     for (let column = -1; column < columns; column += 1) {
-      const x = column * horizontalStep + (row % 2) * horizontalStep / 2;
+      const x = column * horizontalStep;
+      const columnOffset = column % 2 === 0 ? 0 : rowStep / 2;
       const ridge = Math.max(0, 1 - Math.abs(x - peakX) / peakWidth);
       const secondaryRidge = Math.max(0, 1 - Math.abs(x - width * 0.19) / (width * 0.16)) * 0.42;
       const roughness = noise[column + 1] * 0.16 + random() * 0.12;
       const elevation = Math.pow(Math.min(1, ridge + secondaryRidge + roughness), 1.35);
       const heightInLevels = Math.max(0, Math.round(elevation * peakHeight / heightUnit));
-      const y = mountainBase + row * rowStep - heightInLevels * heightUnit;
+      const y = mountainBase + row * rowStep + columnOffset - heightInLevels * heightUnit;
       const columnDepth = Math.max(radius * 0.12, heightInLevels * heightUnit);
       const colorShift = Math.min(1, distance * 0.7 + elevation * 0.45);
       const shade = {
@@ -105,7 +107,7 @@ function drawMountain() {
       };
       const snowLine = peakHeight * 0.66;
       const isSnow = heightInLevels * heightUnit > snowLine && random() > 0.22;
-      paintHexColumn(x, y, radius, columnDepth, shade, isSnow);
+      paintHexColumn(x, y, radiusX, radius, columnDepth, shade, isSnow);
     }
   }
 
