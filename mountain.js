@@ -11,6 +11,8 @@ let walkingPhase = 0;
 let lastPlayerFrame = null;
 let playerFrameRequest = 0;
 const heldKeys = new Set();
+const handAttachments = { left: null, right: null };
+let visibleHolds = [];
 const armPose = {
   leftUpper: -0.65,
   leftForearm: -0.2,
@@ -23,12 +25,14 @@ const controlActions = {
   KeyD: { type: 'walk', value: 1 },
   KeyW: { type: 'arm', joint: 'leftUpper', value: -1 },
   KeyS: { type: 'arm', joint: 'leftUpper', value: 1 },
-  KeyE: { type: 'arm', joint: 'leftForearm', value: -1 },
+  KeyT: { type: 'arm', joint: 'leftForearm', value: -1 },
   KeyR: { type: 'arm', joint: 'leftForearm', value: 1 },
   KeyI: { type: 'arm', joint: 'rightUpper', value: -1 },
   KeyK: { type: 'arm', joint: 'rightUpper', value: 1 },
   KeyO: { type: 'arm', joint: 'rightForearm', value: -1 },
-  KeyP: { type: 'arm', joint: 'rightForearm', value: 1 }
+  KeyP: { type: 'arm', joint: 'rightForearm', value: 1 },
+  KeyQ: { type: 'grab', hand: 'left' },
+  KeyE: { type: 'grab', hand: 'right' }
 };
 
 function createRandom(seed) {
@@ -102,13 +106,20 @@ function drawStickFigure(playerX, playerY, height, gaitPhase) {
     };
   }
 
-  function drawArm(startX, upperAngle, forearmAngle) {
-    const elbow = pointAlongArm(startX, shoulderY, scale * 0.25, upperAngle);
-    const wrist = pointAlongArm(elbow.x, elbow.y, scale * 0.24, upperAngle + forearmAngle);
-    const hand = pointAlongArm(wrist.x, wrist.y, scale * 0.09, upperAngle + forearmAngle);
+  function drawArm(startX, upperAngle, forearmAngle, attachedHand) {
+    const elbow = pointAlongArm(startX, shoulderY, scale * 0.23, upperAngle);
+    const wrist = pointAlongArm(elbow.x, elbow.y, scale * 0.22, upperAngle + forearmAngle);
+    const hand = attachedHand || pointAlongArm(wrist.x, wrist.y, scale * 0.09, upperAngle + forearmAngle);
     drawSegment(startX, shoulderY, elbow.x, elbow.y);
     drawSegment(elbow.x, elbow.y, wrist.x, wrist.y);
     drawSegment(wrist.x, wrist.y, hand.x, hand.y);
+    context.beginPath();
+    context.arc(hand.x, hand.y, scale * 0.045, 0, Math.PI * 2);
+    context.fillStyle = '#e8e5d4';
+    context.fill();
+    context.strokeStyle = '#172d30';
+    context.lineWidth = Math.max(1.5, scale * 0.035);
+    context.stroke();
     context.beginPath();
     context.arc(elbow.x, elbow.y, scale * 0.045, 0, Math.PI * 2);
     context.fillStyle = '#e8e5d4';
@@ -136,8 +147,8 @@ function drawStickFigure(playerX, playerY, height, gaitPhase) {
   context.lineWidth = Math.max(2.5, scale * 0.06);
   context.stroke();
 
-  drawArm(playerX - scale * 0.08, armPose.leftUpper, armPose.leftForearm);
-  drawArm(playerX + scale * 0.08, armPose.rightUpper, armPose.rightForearm);
+  drawArm(playerX - scale * 0.08, armPose.leftUpper, armPose.leftForearm, handAttachments.left);
+  drawArm(playerX + scale * 0.08, armPose.rightUpper, armPose.rightForearm, handAttachments.right);
 
   context.beginPath();
   context.arc(headX, headY, headRadius, 0, Math.PI * 2);
@@ -251,6 +262,7 @@ function drawCliffFace() {
             ? y + rectHeight - size / 2
             : y + size / 2 + random() * (rectHeight - size);
         holds.push({
+          id: `${row}-${column}`,
           x: holdX,
           y: holdY,
           size,
@@ -284,8 +296,35 @@ function drawCliffFace() {
     context.fillText(String(altitude), rulerX + 10, tickY);
   }
 
+  visibleHolds = holds;
   holds.forEach(({ x, y, size, direction }) => drawHold(x, y, size, direction));
+  handAttachments.left = holds.find(({ id }) => id === handAttachments.left?.id) || null;
+  handAttachments.right = holds.find(({ id }) => id === handAttachments.right?.id) || null;
   drawStickFigure(width * playerXPosition, playerFootY - height * 0.2 * 0.48, height, walkingPhase);
+}
+
+function attachHand(hand) {
+  const bounds = canvas.getBoundingClientRect();
+  const scale = bounds.height * 0.2;
+  if (!bounds.width || !scale) return;
+
+  const playerX = bounds.width * playerXPosition;
+  const playerY = bounds.height * 0.72 - scale * 0.48;
+  const shoulderX = playerX + (hand === 'left' ? -1 : 1) * scale * 0.08;
+  const shoulderY = playerY - scale * 0.16;
+  const maxReach = scale * 0.72;
+  let closestHold = null;
+  let closestDistance = maxReach;
+
+  for (const hold of visibleHolds) {
+    const distance = Math.hypot(hold.x - shoulderX, hold.y - shoulderY);
+    if (distance < closestDistance) {
+      closestHold = hold;
+      closestDistance = distance;
+    }
+  }
+
+  handAttachments[hand] = closestHold;
 }
 
 function updatePlayer(timestamp) {
@@ -319,28 +358,44 @@ function updatePlayer(timestamp) {
 }
 
 function handlePlayerKeyDown(event) {
-  if (!controlActions[event.code]) return;
+  const action = controlActions[event.code];
+  if (!action) return;
   event.preventDefault();
+  if (action.type === 'grab' && !heldKeys.has(event.code)) attachHand(action.hand);
   heldKeys.add(event.code);
   if (!playerFrameRequest) playerFrameRequest = requestAnimationFrame(updatePlayer);
 }
 
 function handlePlayerKeyUp(event) {
+  const action = controlActions[event.code];
+  if (action?.type === 'grab') handAttachments[action.hand] = null;
   heldKeys.delete(event.code);
+}
+
+function handlePlayerBlur() {
+  heldKeys.clear();
+  handAttachments.left = null;
+  handAttachments.right = null;
 }
 
 window.addEventListener('keydown', handlePlayerKeyDown);
 window.addEventListener('keyup', handlePlayerKeyUp);
-window.addEventListener('blur', () => heldKeys.clear());
+window.addEventListener('blur', handlePlayerBlur);
 
 function generateCliff() {
   currentSeed = Math.floor(Math.random() * 100_000_000);
+  handAttachments.left = null;
+  handAttachments.right = null;
   seedLabel.textContent = `SEED / ${String(currentSeed).padStart(8, '0')}`;
   drawCliffFace();
 }
 
 generateButton.addEventListener('click', generateCliff);
-const resizeObserver = new ResizeObserver(drawCliffFace);
+const resizeObserver = new ResizeObserver(() => {
+  handAttachments.left = null;
+  handAttachments.right = null;
+  drawCliffFace();
+});
 resizeObserver.observe(canvas);
 seedLabel.textContent = `SEED / ${String(currentSeed).padStart(8, '0')}`;
 drawCliffFace();
