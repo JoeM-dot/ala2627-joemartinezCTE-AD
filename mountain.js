@@ -7,12 +7,18 @@ const context = canvas.getContext('2d');
 let currentSeed = Math.floor(Math.random() * 100_000_000);
 let playerAltitude = 0;
 let playerXPosition = 0.49;
+let playerFallOffset = 0;
+let fallVelocity = 0;
+let hasHeldOnce = false;
 let walkingPhase = 0;
 let lastPlayerFrame = null;
 let playerFrameRequest = 0;
 const heldKeys = new Set();
 const handAttachments = { left: null, right: null };
+const jointPositions = {};
 let visibleHolds = [];
+let activePointer = null;
+let bodyRotation = 0;
 const armPose = {
   leftUpper: -0.65,
   leftForearm: -0.2,
@@ -23,14 +29,6 @@ const goalAltitude = 1000;
 const controlActions = {
   KeyA: { type: 'walk', value: -1 },
   KeyD: { type: 'walk', value: 1 },
-  KeyW: { type: 'arm', joint: 'leftUpper', value: -1 },
-  KeyS: { type: 'arm', joint: 'leftUpper', value: 1 },
-  KeyT: { type: 'arm', joint: 'leftForearm', value: -1 },
-  KeyR: { type: 'arm', joint: 'leftForearm', value: 1 },
-  KeyI: { type: 'arm', joint: 'rightUpper', value: -1 },
-  KeyK: { type: 'arm', joint: 'rightUpper', value: 1 },
-  KeyO: { type: 'arm', joint: 'rightForearm', value: -1 },
-  KeyP: { type: 'arm', joint: 'rightForearm', value: 1 },
   KeyQ: { type: 'grab', hand: 'left' },
   KeyE: { type: 'grab', hand: 'right' }
 };
@@ -110,11 +108,21 @@ function drawStickFigure(playerX, playerY, height, gaitPhase) {
     const elbow = pointAlongArm(startX, shoulderY, scale * 0.23, upperAngle);
     const wrist = pointAlongArm(elbow.x, elbow.y, scale * 0.22, upperAngle + forearmAngle);
     const hand = attachedHand || pointAlongArm(wrist.x, wrist.y, scale * 0.09, upperAngle + forearmAngle);
+    const side = startX < playerX ? 'left' : 'right';
+    jointPositions[`${side}Shoulder`] = { x: startX, y: shoulderY };
+    jointPositions[`${side}Elbow`] = elbow;
     drawSegment(startX, shoulderY, elbow.x, elbow.y);
     drawSegment(elbow.x, elbow.y, wrist.x, wrist.y);
     drawSegment(wrist.x, wrist.y, hand.x, hand.y);
     context.beginPath();
     context.arc(hand.x, hand.y, scale * 0.045, 0, Math.PI * 2);
+    context.fillStyle = '#e8e5d4';
+    context.fill();
+    context.strokeStyle = '#172d30';
+    context.lineWidth = Math.max(1.5, scale * 0.035);
+    context.stroke();
+    context.beginPath();
+    context.arc(startX, shoulderY, scale * 0.045, 0, Math.PI * 2);
     context.fillStyle = '#e8e5d4';
     context.fill();
     context.strokeStyle = '#172d30';
@@ -300,7 +308,17 @@ function drawCliffFace() {
   holds.forEach(({ x, y, size, direction }) => drawHold(x, y, size, direction));
   handAttachments.left = holds.find(({ id }) => id === handAttachments.left?.id) || null;
   handAttachments.right = holds.find(({ id }) => id === handAttachments.right?.id) || null;
-  drawStickFigure(width * playerXPosition, playerFootY - height * 0.2 * 0.48, height, walkingPhase);
+  const playerX = width * playerXPosition;
+  const playerY = playerFootY - height * 0.2 * 0.48 + playerFallOffset;
+  const swingPivot = handAttachments.left || handAttachments.right;
+  if (swingPivot && bodyRotation) {
+    context.save();
+    context.translate(swingPivot.x, swingPivot.y);
+    context.rotate(bodyRotation);
+    context.translate(-swingPivot.x, -swingPivot.y);
+  }
+  drawStickFigure(playerX, playerY, height, walkingPhase);
+  if (swingPivot && bodyRotation) context.restore();
 }
 
 function attachHand(hand) {
@@ -309,7 +327,7 @@ function attachHand(hand) {
   if (!bounds.width || !scale) return;
 
   const playerX = bounds.width * playerXPosition;
-  const playerY = bounds.height * 0.72 - scale * 0.48;
+  const playerY = bounds.height * 0.72 - scale * 0.48 + playerFallOffset;
   const shoulderX = playerX + (hand === 'left' ? -1 : 1) * scale * 0.08;
   const shoulderY = playerY - scale * 0.16;
   const maxReach = scale * 0.72;
@@ -325,6 +343,117 @@ function attachHand(hand) {
   }
 
   handAttachments[hand] = closestHold;
+  if (closestHold) {
+    hasHeldOnce = true;
+    fallVelocity = 0;
+    if (handAttachments.left && handAttachments.right) bodyRotation = 0;
+  }
+}
+
+function hasAttachment() {
+  return Boolean(handAttachments.left || handAttachments.right);
+}
+
+function getSwingPivot() {
+  if (handAttachments.left && handAttachments.right) return null;
+  return handAttachments.left || handAttachments.right;
+}
+
+function rotatePoint(point, pivot, angle) {
+  if (!pivot || !angle) return point;
+  const cosine = Math.cos(angle);
+  const sine = Math.sin(angle);
+  const offsetX = point.x - pivot.x;
+  const offsetY = point.y - pivot.y;
+  return {
+    x: pivot.x + offsetX * cosine - offsetY * sine,
+    y: pivot.y + offsetX * sine + offsetY * cosine
+  };
+}
+
+function getCanvasPoint(event) {
+  const bounds = canvas.getBoundingClientRect();
+  return { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+}
+
+function startPlayerLoop() {
+  if (!playerFrameRequest) playerFrameRequest = requestAnimationFrame(updatePlayer);
+}
+
+function handlePointerDown(event) {
+  if (event.button !== 0) return;
+  const point = getCanvasPoint(event);
+  const bounds = canvas.getBoundingClientRect();
+  const scale = bounds.height * 0.2;
+  const pivot = getSwingPivot();
+  const jointHit = Object.entries(jointPositions)
+    .map(([joint, position]) => [joint, rotatePoint(position, pivot, bodyRotation)])
+    .find(([, position]) => Math.hypot(position.x - point.x, position.y - point.y) < scale * 0.11);
+
+  if (jointHit) {
+    activePointer = { type: 'joint', joint: jointHit[0] };
+  } else if (pivot) {
+    const torsoCenter = rotatePoint({
+      x: bounds.width * playerXPosition,
+      y: bounds.height * 0.72 - scale * 0.48 + playerFallOffset
+    }, pivot, bodyRotation);
+    if (Math.hypot(point.x - torsoCenter.x, point.y - torsoCenter.y) >= scale * 0.2) return;
+    activePointer = {
+      type: 'swing',
+      startAngle: Math.atan2(point.y - pivot.y, point.x - pivot.x),
+      startRotation: bodyRotation
+    };
+  } else {
+    return;
+  }
+
+  event.preventDefault();
+  canvas.setPointerCapture(event.pointerId);
+  startPlayerLoop();
+}
+
+function handlePointerMove(event) {
+  if (!activePointer) return;
+  const point = getCanvasPoint(event);
+
+  if (activePointer.type === 'swing') {
+    const pivot = getSwingPivot();
+    if (!pivot) return;
+    const currentAngle = Math.atan2(point.y - pivot.y, point.x - pivot.x);
+    let angleDelta = currentAngle - activePointer.startAngle;
+    if (angleDelta > Math.PI) angleDelta -= Math.PI * 2;
+    if (angleDelta < -Math.PI) angleDelta += Math.PI * 2;
+    bodyRotation = activePointer.startRotation + angleDelta;
+  } else {
+    const bounds = canvas.getBoundingClientRect();
+    const scale = bounds.height * 0.2;
+    const playerX = bounds.width * playerXPosition;
+    const playerY = bounds.height * 0.72 - scale * 0.48 + playerFallOffset;
+    const pivot = getSwingPivot();
+    const shoulderX = playerX + (activePointer.joint.startsWith('left') ? -1 : 1) * scale * 0.08;
+    const shoulder = rotatePoint({ x: shoulderX, y: playerY - scale * 0.16 }, pivot, bodyRotation);
+    const elbow = rotatePoint(jointPositions[`${activePointer.joint.startsWith('left') ? 'left' : 'right'}Elbow`], pivot, bodyRotation);
+    const pointerAngle = (origin) => Math.atan2(point.x - origin.x, point.y - origin.y);
+
+    if (activePointer.joint.endsWith('Shoulder')) {
+      const angle = pointerAngle(shoulder) - bodyRotation;
+      armPose[`${activePointer.joint.startsWith('left') ? 'left' : 'right'}Upper`] = Math.max(-2.5, Math.min(2.5, angle));
+    } else {
+      const side = activePointer.joint.startsWith('left') ? 'left' : 'right';
+      const upperAngle = armPose[`${side}Upper`];
+      const angle = pointerAngle(elbow) - bodyRotation - upperAngle;
+      armPose[`${side}Forearm`] = Math.max(-2.5, Math.min(2.5, angle));
+    }
+  }
+
+  drawCliffFace();
+}
+
+function handlePointerUp(event) {
+  if (!activePointer) return;
+  activePointer = null;
+  if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+  startPlayerLoop();
 }
 
 function updatePlayer(timestamp) {
@@ -336,20 +465,21 @@ function updatePlayer(timestamp) {
     .reduce((direction, action) => direction + action.value, 0);
   const bounds = canvas.getBoundingClientRect();
 
-  if (walkingDirection && bounds.width) {
+  if (walkingDirection && bounds.width && !hasAttachment()) {
     playerXPosition += walkingDirection * elapsed * 0.42;
     walkingPhase += elapsed * 9;
   }
 
-  for (const code of heldKeys) {
-    const action = controlActions[code];
-    if (action?.type === 'arm') {
-      armPose[action.joint] = Math.max(-2.5, Math.min(2.5, armPose[action.joint] + action.value * elapsed * 2.2));
-    }
+  if (hasAttachment()) {
+    fallVelocity = 0;
+  } else if (hasHeldOnce && bounds.height) {
+    fallVelocity += bounds.height * 1.8 * elapsed;
+    playerFallOffset = Math.min(bounds.height * 0.22, playerFallOffset + fallVelocity * elapsed);
+    if (playerFallOffset >= bounds.height * 0.22) fallVelocity = 0;
   }
 
   drawCliffFace();
-  if (heldKeys.size) {
+  if (heldKeys.size || activePointer || (hasHeldOnce && fallVelocity > 0)) {
     playerFrameRequest = requestAnimationFrame(updatePlayer);
   } else {
     playerFrameRequest = 0;
@@ -363,12 +493,16 @@ function handlePlayerKeyDown(event) {
   event.preventDefault();
   if (action.type === 'grab' && !heldKeys.has(event.code)) attachHand(action.hand);
   heldKeys.add(event.code);
-  if (!playerFrameRequest) playerFrameRequest = requestAnimationFrame(updatePlayer);
+  startPlayerLoop();
 }
 
 function handlePlayerKeyUp(event) {
   const action = controlActions[event.code];
-  if (action?.type === 'grab') handAttachments[action.hand] = null;
+  if (action?.type === 'grab') {
+    handAttachments[action.hand] = null;
+    if (!hasAttachment()) bodyRotation = 0;
+    startPlayerLoop();
+  }
   heldKeys.delete(event.code);
 }
 
@@ -376,16 +510,27 @@ function handlePlayerBlur() {
   heldKeys.clear();
   handAttachments.left = null;
   handAttachments.right = null;
+  bodyRotation = 0;
+  startPlayerLoop();
 }
 
 window.addEventListener('keydown', handlePlayerKeyDown);
 window.addEventListener('keyup', handlePlayerKeyUp);
 window.addEventListener('blur', handlePlayerBlur);
+canvas.addEventListener('pointerdown', handlePointerDown);
+canvas.addEventListener('pointermove', handlePointerMove);
+canvas.addEventListener('pointerup', handlePointerUp);
+canvas.addEventListener('pointercancel', handlePointerUp);
 
 function generateCliff() {
   currentSeed = Math.floor(Math.random() * 100_000_000);
   handAttachments.left = null;
   handAttachments.right = null;
+  playerAltitude = 0;
+  playerFallOffset = 0;
+  fallVelocity = 0;
+  hasHeldOnce = false;
+  bodyRotation = 0;
   seedLabel.textContent = `SEED / ${String(currentSeed).padStart(8, '0')}`;
   drawCliffFace();
 }
