@@ -120,7 +120,13 @@ function drawStickFigure(playerX, playerY, height, gaitPhase) {
     const wrist = pointAlongArm(elbow.x, elbow.y, scale * 0.22, upperAngle + forearmAngle);
     const hand = attachedHand || pointAlongArm(wrist.x, wrist.y, scale * 0.09, upperAngle + forearmAngle);
     limbHitboxes.push({ side, joint: `${side}Shoulder`, start: { x: startX, y: shoulderY }, end: elbow });
-    limbHitboxes.push({ side, joint: `${side}Elbow`, start: elbow, end: attachedHand || wrist });
+    limbHitboxes.push({
+      side,
+      joint: `${side}Elbow`,
+      start: elbow,
+      end: attachedHand || wrist,
+      fixed: Boolean(attachedHand)
+    });
     drawLimbSegment(startX, shoulderY, elbow.x, elbow.y, scale);
     if (!attachedHand) {
       drawLimbSegment(elbow.x, elbow.y, wrist.x, wrist.y, scale);
@@ -447,18 +453,21 @@ function handlePointerDown(event) {
   const bounds = canvas.getBoundingClientRect();
   const scale = bounds.height * 0.2;
   const pivot = getSwingPivot();
-  const limbHit = limbHitboxes.find(({ side, start, end }) => (
-    !handAttachments[side]
-      && pointInLimbRectangle(
-        point,
-        rotatePoint(start, pivot, bodyRotation),
-        rotatePoint(end, pivot, bodyRotation),
-        Math.max(7, scale * 0.08)
-      )
+  const limbHit = limbHitboxes.find(({ start, end, fixed }) => (
+    pointInLimbRectangle(
+      point,
+      rotatePoint(start, pivot, bodyRotation),
+      fixed ? end : rotatePoint(end, pivot, bodyRotation),
+      Math.max(7, scale * 0.08)
+    )
   ));
 
   if (limbHit) {
     activePointer = { type: 'joint', joint: limbHit.joint };
+    if (handAttachments[limbHit.side] && bodyRotation) {
+      bodyRotation = 0;
+      drawCliffFace();
+    }
   } else if (pivot) {
     const torsoCenter = rotatePoint({
       x: bounds.width * playerXPosition,
@@ -500,6 +509,7 @@ function handlePointerMove(event) {
     const side = activePointer.joint.startsWith('left') ? 'left' : 'right';
     const shoulderX = playerX + (side === 'left' ? -1 : 1) * scale * 0.08;
     const shoulder = rotatePoint({ x: shoulderX, y: playerY - scale * 0.16 }, pivot, bodyRotation);
+    const attachment = handAttachments[side];
     const elbow = rotatePoint(
       limbHitboxes.find(({ joint }) => joint === `${side}Shoulder`)?.end,
       pivot,
@@ -507,7 +517,32 @@ function handlePointerMove(event) {
     );
     const pointerAngle = (origin) => Math.atan2(point.x - origin.x, point.y - origin.y);
 
-    if (activePointer.joint.endsWith('Shoulder')) {
+    if (attachment) {
+      const upperLength = scale * 0.23;
+      const forearmLength = scale * 0.22;
+      let nextElbow;
+
+      if (activePointer.joint.endsWith('Shoulder')) {
+        const upperAngle = Math.max(-2.5, Math.min(2.5, pointerAngle(shoulder)));
+        armPose[`${side}Upper`] = upperAngle;
+        nextElbow = {
+          x: shoulder.x + Math.sin(upperAngle) * upperLength,
+          y: shoulder.y + Math.cos(upperAngle) * upperLength
+        };
+      } else {
+        const forearmDirection = pointerAngle({ x: attachment.x, y: attachment.y });
+        nextElbow = {
+          x: attachment.x + Math.sin(forearmDirection) * forearmLength,
+          y: attachment.y + Math.cos(forearmDirection) * forearmLength
+        };
+        armPose[`${side}Upper`] = Math.atan2(nextElbow.x - shoulder.x, nextElbow.y - shoulder.y);
+      }
+
+      attachment.elbow = nextElbow;
+      attachment.elbowOffset = { x: nextElbow.x - attachment.x, y: nextElbow.y - attachment.y };
+      armPose[`${side}Forearm`] = Math.atan2(attachment.x - nextElbow.x, attachment.y - nextElbow.y)
+        - armPose[`${side}Upper`];
+    } else if (activePointer.joint.endsWith('Shoulder')) {
       const angle = pointerAngle(shoulder) - bodyRotation;
       armPose[`${side}Upper`] = Math.max(-2.5, Math.min(2.5, angle));
     } else {
@@ -545,12 +580,15 @@ function updatePlayer(timestamp) {
     fallVelocity = 0;
   } else if (hasHeldOnce && bounds.height) {
     fallVelocity += bounds.height * 1.8 * elapsed;
-    playerFallOffset = Math.min(bounds.height * 0.22, playerFallOffset + fallVelocity * elapsed);
-    if (playerFallOffset >= bounds.height * 0.22) fallVelocity = 0;
+    const groundOffset = bounds.height * 0.28;
+    playerFallOffset = Math.min(groundOffset, playerFallOffset + fallVelocity * elapsed);
+    if (playerFallOffset >= groundOffset) fallVelocity = 0;
   }
 
   drawCliffFace();
-  if (heldKeys.size || activePointer || (hasHeldOnce && fallVelocity > 0)) {
+  const isFalling = hasHeldOnce && !hasAttachment() && bounds.height
+    && playerFallOffset < bounds.height * 0.28;
+  if (heldKeys.size || activePointer || isFalling) {
     playerFrameRequest = requestAnimationFrame(updatePlayer);
   } else {
     playerFrameRequest = 0;
