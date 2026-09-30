@@ -6,7 +6,7 @@ const context = canvas.getContext('2d');
 
 let currentSeed = Math.floor(Math.random() * 100_000_000);
 let playerAltitude = 0;
-let playerXPosition = 0.49;
+let playerXPosition = 0.56;
 let playerFallOffset = 0;
 let fallVelocity = 0;
 let hasHeldOnce = false;
@@ -15,7 +15,7 @@ let lastPlayerFrame = null;
 let playerFrameRequest = 0;
 const heldKeys = new Set();
 const handAttachments = { left: null, right: null };
-const jointPositions = {};
+const limbHitboxes = [];
 let visibleHolds = [];
 let activePointer = null;
 let bodyRotation = 0;
@@ -73,6 +73,32 @@ function drawHold(centerX, centerY, size, direction) {
   context.stroke();
 }
 
+function drawLimbSegment(startX, startY, endX, endY, scale) {
+  context.beginPath();
+  context.moveTo(startX, startY);
+  context.lineTo(endX, endY);
+  context.strokeStyle = '#172d30';
+  context.lineWidth = Math.max(4, scale * 0.11);
+  context.lineCap = 'round';
+  context.stroke();
+  context.beginPath();
+  context.moveTo(startX, startY);
+  context.lineTo(endX, endY);
+  context.strokeStyle = '#e8e5d4';
+  context.lineWidth = Math.max(2.5, scale * 0.06);
+  context.stroke();
+}
+
+function drawHand(x, y, scale) {
+  context.beginPath();
+  context.arc(x, y, scale * 0.045, 0, Math.PI * 2);
+  context.fillStyle = '#e8e5d4';
+  context.fill();
+  context.strokeStyle = '#172d30';
+  context.lineWidth = Math.max(1.5, scale * 0.035);
+  context.stroke();
+}
+
 function drawStickFigure(playerX, playerY, height, gaitPhase) {
   const scale = height * 0.2;
   const headX = playerX + scale * 0.01;
@@ -80,22 +106,6 @@ function drawStickFigure(playerX, playerY, height, gaitPhase) {
   const headRadius = scale * 0.14;
   const shoulderY = playerY - scale * 0.16;
   const hipY = playerY + scale * 0.16;
-
-  function drawSegment(startX, startY, endX, endY) {
-    context.beginPath();
-    context.moveTo(startX, startY);
-    context.lineTo(endX, endY);
-    context.strokeStyle = '#172d30';
-    context.lineWidth = Math.max(4, scale * 0.11);
-    context.lineCap = 'round';
-    context.stroke();
-    context.beginPath();
-    context.moveTo(startX, startY);
-    context.lineTo(endX, endY);
-    context.strokeStyle = '#e8e5d4';
-    context.lineWidth = Math.max(2.5, scale * 0.06);
-    context.stroke();
-  }
 
   function pointAlongArm(startX, startY, length, angle) {
     return {
@@ -105,36 +115,20 @@ function drawStickFigure(playerX, playerY, height, gaitPhase) {
   }
 
   function drawArm(startX, upperAngle, forearmAngle, attachedHand) {
-    const elbow = pointAlongArm(startX, shoulderY, scale * 0.23, upperAngle);
+    const side = startX < playerX ? 'left' : 'right';
+    const elbow = attachedHand?.elbow || pointAlongArm(startX, shoulderY, scale * 0.23, upperAngle);
     const wrist = pointAlongArm(elbow.x, elbow.y, scale * 0.22, upperAngle + forearmAngle);
     const hand = attachedHand || pointAlongArm(wrist.x, wrist.y, scale * 0.09, upperAngle + forearmAngle);
-    const side = startX < playerX ? 'left' : 'right';
-    jointPositions[`${side}Shoulder`] = { x: startX, y: shoulderY };
-    jointPositions[`${side}Elbow`] = elbow;
-    drawSegment(startX, shoulderY, elbow.x, elbow.y);
-    drawSegment(elbow.x, elbow.y, wrist.x, wrist.y);
-    drawSegment(wrist.x, wrist.y, hand.x, hand.y);
-    context.beginPath();
-    context.arc(hand.x, hand.y, scale * 0.045, 0, Math.PI * 2);
-    context.fillStyle = '#e8e5d4';
-    context.fill();
-    context.strokeStyle = '#172d30';
-    context.lineWidth = Math.max(1.5, scale * 0.035);
-    context.stroke();
-    context.beginPath();
-    context.arc(startX, shoulderY, scale * 0.045, 0, Math.PI * 2);
-    context.fillStyle = '#e8e5d4';
-    context.fill();
-    context.strokeStyle = '#172d30';
-    context.lineWidth = Math.max(1.5, scale * 0.035);
-    context.stroke();
-    context.beginPath();
-    context.arc(elbow.x, elbow.y, scale * 0.045, 0, Math.PI * 2);
-    context.fillStyle = '#e8e5d4';
-    context.fill();
-    context.strokeStyle = '#172d30';
-    context.lineWidth = Math.max(1.5, scale * 0.035);
-    context.stroke();
+    limbHitboxes.push({ side, joint: `${side}Shoulder`, start: { x: startX, y: shoulderY }, end: elbow });
+    limbHitboxes.push({ side, joint: `${side}Elbow`, start: elbow, end: attachedHand || wrist });
+    drawLimbSegment(startX, shoulderY, elbow.x, elbow.y, scale);
+    if (!attachedHand) {
+      drawLimbSegment(elbow.x, elbow.y, wrist.x, wrist.y, scale);
+      drawLimbSegment(wrist.x, wrist.y, hand.x, hand.y, scale);
+      drawHand(hand.x, hand.y, scale);
+    }
+    drawHand(startX, shoulderY, scale);
+    drawHand(elbow.x, elbow.y, scale);
   }
 
   const stride = Math.sin(gaitPhase) * scale * 0.2;
@@ -306,11 +300,24 @@ function drawCliffFace() {
 
   visibleHolds = holds;
   holds.forEach(({ x, y, size, direction }) => drawHold(x, y, size, direction));
-  handAttachments.left = holds.find(({ id }) => id === handAttachments.left?.id) || null;
-  handAttachments.right = holds.find(({ id }) => id === handAttachments.right?.id) || null;
+  for (const hand of ['left', 'right']) {
+    const attachment = handAttachments[hand];
+    const hold = holds.find(({ id }) => id === attachment?.id);
+    handAttachments[hand] = hold
+      ? {
+          ...attachment,
+          ...hold,
+          elbow: {
+            x: hold.x + attachment.elbowOffset.x,
+            y: hold.y + attachment.elbowOffset.y
+          }
+        }
+      : null;
+  }
+  limbHitboxes.length = 0;
   const playerX = width * playerXPosition;
   const playerY = playerFootY - height * 0.2 * 0.48 + playerFallOffset;
-  const swingPivot = handAttachments.left || handAttachments.right;
+  const swingPivot = getSwingPivot();
   if (swingPivot && bodyRotation) {
     context.save();
     context.translate(swingPivot.x, swingPivot.y);
@@ -319,6 +326,11 @@ function drawCliffFace() {
   }
   drawStickFigure(playerX, playerY, height, walkingPhase);
   if (swingPivot && bodyRotation) context.restore();
+  for (const attachment of Object.values(handAttachments)) {
+    if (!attachment) continue;
+    drawLimbSegment(attachment.elbow.x, attachment.elbow.y, attachment.x, attachment.y, height * 0.2);
+    drawHand(attachment.x, attachment.y, height * 0.2);
+  }
 }
 
 function attachHand(hand) {
@@ -330,24 +342,59 @@ function attachHand(hand) {
   const playerY = bounds.height * 0.72 - scale * 0.48 + playerFallOffset;
   const shoulderX = playerX + (hand === 'left' ? -1 : 1) * scale * 0.08;
   const shoulderY = playerY - scale * 0.16;
-  const maxReach = scale * 0.72;
+  const upperLength = scale * 0.23;
+  const forearmLength = scale * 0.22;
+  const currentElbow = {
+    x: shoulderX + Math.sin(armPose[`${hand}Upper`]) * upperLength,
+    y: shoulderY + Math.cos(armPose[`${hand}Upper`]) * upperLength
+  };
+  const currentWrist = {
+    x: currentElbow.x + Math.sin(armPose[`${hand}Upper`] + armPose[`${hand}Forearm`]) * forearmLength,
+    y: currentElbow.y + Math.cos(armPose[`${hand}Upper`] + armPose[`${hand}Forearm`]) * forearmLength
+  };
   let closestHold = null;
-  let closestDistance = maxReach;
+  let closestDistance = Infinity;
 
   for (const hold of visibleHolds) {
     const distance = Math.hypot(hold.x - shoulderX, hold.y - shoulderY);
-    if (distance < closestDistance) {
+    if (distance < Math.abs(upperLength - forearmLength) || distance > upperLength + forearmLength) continue;
+    const wristDistance = Math.hypot(hold.x - currentWrist.x, hold.y - currentWrist.y);
+    if (wristDistance < closestDistance) {
       closestHold = hold;
-      closestDistance = distance;
+      closestDistance = wristDistance;
     }
   }
 
-  handAttachments[hand] = closestHold;
-  if (closestHold) {
-    hasHeldOnce = true;
-    fallVelocity = 0;
-    if (handAttachments.left && handAttachments.right) bodyRotation = 0;
-  }
+  if (!closestHold) return;
+
+  const holdDx = closestHold.x - shoulderX;
+  const holdDy = closestHold.y - shoulderY;
+  const distance = Math.hypot(holdDx, holdDy);
+  const along = (upperLength ** 2 - forearmLength ** 2 + distance ** 2) / (2 * distance);
+  const across = Math.sqrt(Math.max(0, upperLength ** 2 - along ** 2));
+  const baseX = shoulderX + (along * holdDx) / distance;
+  const baseY = shoulderY + (along * holdDy) / distance;
+  const perpendicularX = -holdDy / distance;
+  const perpendicularY = holdDx / distance;
+  const elbows = [
+    { x: baseX + perpendicularX * across, y: baseY + perpendicularY * across },
+    { x: baseX - perpendicularX * across, y: baseY - perpendicularY * across }
+  ];
+  const elbow = elbows.reduce((best, candidate) => (
+    Math.hypot(candidate.x - currentElbow.x, candidate.y - currentElbow.y)
+      < Math.hypot(best.x - currentElbow.x, best.y - currentElbow.y) ? candidate : best
+  ));
+  const upperAngle = Math.atan2(elbow.x - shoulderX, elbow.y - shoulderY);
+  armPose[`${hand}Upper`] = upperAngle;
+  armPose[`${hand}Forearm`] = Math.atan2(closestHold.x - elbow.x, closestHold.y - elbow.y) - upperAngle;
+  handAttachments[hand] = {
+    ...closestHold,
+    elbow,
+    elbowOffset: { x: elbow.x - closestHold.x, y: elbow.y - closestHold.y }
+  };
+  hasHeldOnce = true;
+  fallVelocity = 0;
+  if (handAttachments.left && handAttachments.right) bodyRotation = 0;
 }
 
 function hasAttachment() {
@@ -356,7 +403,21 @@ function hasAttachment() {
 
 function getSwingPivot() {
   if (handAttachments.left && handAttachments.right) return null;
-  return handAttachments.left || handAttachments.right;
+  return handAttachments.left?.elbow || handAttachments.right?.elbow || null;
+}
+
+function pointInLimbRectangle(point, start, end, halfWidth) {
+  const deltaX = end.x - start.x;
+  const deltaY = end.y - start.y;
+  const length = Math.hypot(deltaX, deltaY);
+  if (!length) return false;
+  const directionX = deltaX / length;
+  const directionY = deltaY / length;
+  const offsetX = point.x - start.x;
+  const offsetY = point.y - start.y;
+  const along = offsetX * directionX + offsetY * directionY;
+  const across = Math.abs(offsetX * -directionY + offsetY * directionX);
+  return along >= 0 && along <= length && across <= halfWidth;
 }
 
 function rotatePoint(point, pivot, angle) {
@@ -386,12 +447,18 @@ function handlePointerDown(event) {
   const bounds = canvas.getBoundingClientRect();
   const scale = bounds.height * 0.2;
   const pivot = getSwingPivot();
-  const jointHit = Object.entries(jointPositions)
-    .map(([joint, position]) => [joint, rotatePoint(position, pivot, bodyRotation)])
-    .find(([, position]) => Math.hypot(position.x - point.x, position.y - point.y) < scale * 0.11);
+  const limbHit = limbHitboxes.find(({ side, start, end }) => (
+    !handAttachments[side]
+      && pointInLimbRectangle(
+        point,
+        rotatePoint(start, pivot, bodyRotation),
+        rotatePoint(end, pivot, bodyRotation),
+        Math.max(7, scale * 0.08)
+      )
+  ));
 
-  if (jointHit) {
-    activePointer = { type: 'joint', joint: jointHit[0] };
+  if (limbHit) {
+    activePointer = { type: 'joint', joint: limbHit.joint };
   } else if (pivot) {
     const torsoCenter = rotatePoint({
       x: bounds.width * playerXPosition,
@@ -430,16 +497,20 @@ function handlePointerMove(event) {
     const playerX = bounds.width * playerXPosition;
     const playerY = bounds.height * 0.72 - scale * 0.48 + playerFallOffset;
     const pivot = getSwingPivot();
-    const shoulderX = playerX + (activePointer.joint.startsWith('left') ? -1 : 1) * scale * 0.08;
+    const side = activePointer.joint.startsWith('left') ? 'left' : 'right';
+    const shoulderX = playerX + (side === 'left' ? -1 : 1) * scale * 0.08;
     const shoulder = rotatePoint({ x: shoulderX, y: playerY - scale * 0.16 }, pivot, bodyRotation);
-    const elbow = rotatePoint(jointPositions[`${activePointer.joint.startsWith('left') ? 'left' : 'right'}Elbow`], pivot, bodyRotation);
+    const elbow = rotatePoint(
+      limbHitboxes.find(({ joint }) => joint === `${side}Shoulder`)?.end,
+      pivot,
+      bodyRotation
+    );
     const pointerAngle = (origin) => Math.atan2(point.x - origin.x, point.y - origin.y);
 
     if (activePointer.joint.endsWith('Shoulder')) {
       const angle = pointerAngle(shoulder) - bodyRotation;
-      armPose[`${activePointer.joint.startsWith('left') ? 'left' : 'right'}Upper`] = Math.max(-2.5, Math.min(2.5, angle));
+      armPose[`${side}Upper`] = Math.max(-2.5, Math.min(2.5, angle));
     } else {
-      const side = activePointer.joint.startsWith('left') ? 'left' : 'right';
       const upperAngle = armPose[`${side}Upper`];
       const angle = pointerAngle(elbow) - bodyRotation - upperAngle;
       armPose[`${side}Forearm`] = Math.max(-2.5, Math.min(2.5, angle));
