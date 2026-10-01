@@ -141,19 +141,152 @@
         <div class="tools-intro-copy">
           <span class="micro-label">Workshop / 001</span>
           <h1 id="tools-title">Tools</h1>
-          <p>A workspace for small utilities, prototypes, and creative experiments.</p>
+          <p>Turn a six-digit seed into a repeatable maze. Same seed, same layout; new seed, new paths.</p>
         </div>
         <div class="tools-display" aria-hidden="true">
-          <span class="tools-display-label">WORKSPACE</span>
-          <span class="tools-display-number">01</span>
+          <span class="tools-display-label">SEEDED MAZE</span>
+          <span class="tools-display-number">06</span>
           <span class="tools-display-line"></span>
-          <span class="tools-display-status"><span></span> READY FOR IDEAS</span>
+          <span class="tools-display-status"><span></span> DIGIT SEED</span>
+        </div>
+      </section>
+
+      <section class="seed-workbench" aria-labelledby="maze-example-title">
+        <div class="seed-section-heading">
+          <p class="micro-label">Example / 001</p>
+          <h2 id="maze-example-title">One seed, one maze.</h2>
+          <p>Choose a six-digit number or generate one. The number controls every random choice used to carve the
+            layout.</p>
+        </div>
+
+        <div class="seed-demo glass-panel">
+          <div class="seed-controls-panel">
+            <form id="seedForm" class="seed-form">
+              <label class="seed-label" for="seedInput">Maze seed</label>
+              <div class="seed-control-row">
+                <input id="seedInput" name="seed" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+                  value="418207" autocomplete="off" aria-describedby="seedHint seedStatus" />
+                <button class="seed-button seed-button-primary" type="submit">Build maze</button>
+              </div>
+              <p class="seed-hint" id="seedHint">Enter exactly six digits. Try the same number again to reproduce its
+                maze.</p>
+            </form>
+            <button class="seed-button seed-button-secondary" id="generateSeedButton" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 7v5h-5M4 17v-5h5M5.6 9A7 7 0 0 1 18 6l2 2M4 16l2 2a7 7 0 0 0 12.4-3" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              Generate random seed
+            </button>
+            <output class="seed-status" id="seedStatus" aria-live="polite">Maze ready for seed 418207.</output>
+            <div class="seed-legend" aria-label="Maze legend">
+              <span><i class="legend-start"></i> Start</span>
+              <span><i class="legend-path"></i> Path</span>
+              <span><i class="legend-exit"></i> Exit</span>
+            </div>
+          </div>
+
+          <div class="seed-visual-panel">
+            <div class="seed-maze-heading">
+              <span>Layout preview</span>
+              <span id="mazeSeedLabel">SEED 418207</span>
+            </div>
+            <div class="seed-maze-frame">
+              <div class="seed-maze" id="seedMaze" role="img" aria-label="Maze layout for seed 418207"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="seed-guide" aria-labelledby="seed-guide-title">
+        <div class="seed-section-heading">
+          <p class="micro-label">Under the hood / 004 steps</p>
+          <h2 id="seed-guide-title">How the code works</h2>
+          <p>Each step feeds the next: a seed starts a repeatable random sequence, which guides the maze carver.</p>
+        </div>
+
+        <div class="seed-guide-list">
+          <article class="seed-guide-step">
+            <div class="seed-step-copy">
+              <span class="seed-step-number">01</span>
+              <h3>Make a six-digit seed</h3>
+              <p><code>Math.random()</code> gives a value from zero up to (but not including) one. Scaling it by 900,000
+                and adding 100,000 makes every result a six-digit number.</p>
+            </div>
+            <pre><code>function generateSeed() {
+  return String(
+    Math.floor(Math.random() * 900000) + 100000
+  );
+}</code></pre>
+          </article>
+
+          <article class="seed-guide-step">
+            <div class="seed-step-copy">
+              <span class="seed-step-number">02</span>
+              <h3>Make randomness repeatable</h3>
+              <p>This small seeded random function updates a number using the previous value. Starting from the same
+                seed
+                produces the same sequence, so the maze choices repeat too.</p>
+            </div>
+            <pre><code>function createRandom(seed) {
+  let value = Number(seed);
+  return function () {
+    value = (value * 1664525 + 1013904223)
+      % 4294967296;
+    return value / 4294967296;
+  };
+}</code></pre>
+          </article>
+
+          <article class="seed-guide-step">
+            <div class="seed-step-copy">
+              <span class="seed-step-number">03</span>
+              <h3>Carve connected paths</h3>
+              <p>The grid starts as walls. A stack walks to an unvisited cell two spaces away, opens the wall between,
+                and backtracks when it reaches a dead end. The seeded random value picks which direction to try.</p>
+            </div>
+            <pre><code>const directions = [[0, 2], [0, -2], [2, 0], [-2, 0]];
+const stack = [[1, 1]];
+cells[1][1] = " ";
+
+while (stack.length) {
+  const [row, column] = stack[stack.length - 1];
+  const choices = findUnvisitedNeighbors(row, column, directions, cells);
+  if (!choices.length) {
+    stack.pop();
+    continue;
+  }
+  const [nextRow, nextColumn, rowDelta, columnDelta] =
+    choices[Math.floor(random() * choices.length)];
+  carvePath(row, column, nextRow, nextColumn, rowDelta, columnDelta, cells);
+  stack.push([nextRow, nextColumn]);
+}</code></pre>
+          </article>
+
+          <article class="seed-guide-step">
+            <div class="seed-step-copy">
+              <span class="seed-step-number">04</span>
+              <h3>Mark and draw the maze</h3>
+              <p>After carving, the code chooses two distant open cells for the start and exit. The renderer turns each
+                grid value into a colored square in the preview above.</p>
+            </div>
+            <pre><code>const exit = exitChoices[
+  Math.floor(random() * exitChoices.length)
+];
+cells[start.row][start.column] = "S";
+cells[exit.row][exit.column] = "E";
+
+const tile = document.createElement("span");
+tile.className = `seed-tile seed-tile-${type}`;
+mazeElement.append(tile);</code></pre>
+          </article>
         </div>
       </section>
     </main>
   </div>
 
   <script src="app.js"></script>
+  <script src="tools.js"></script>
 </body>
 
 </html>
