@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tools | Joe M</title>
+  <meta name="description" content="A workspace for Joe Martinez's creative tools and experiments." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="site-shell">
+    <aside class="sidebar glass-panel">
+      <a class="brand" href="index.html" aria-label="Joe M home page">
+        <span class="brand-mark">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+        <span class="brand-text">
+          <span class="brand-kicker">Studio</span>
+          <span class="brand-name">Joe M</span>
+        </span>
+      </a>
+
+      <nav class="main-nav" aria-label="Main navigation">
+        <a class="nav-link" href="studio.html#overview">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 12l9-9 9 9-9 9-9-9z" fill="none" stroke="currentColor" stroke-width="2" />
+            </svg>
+          </span>
+          <span>Overview</span>
+        </a>
+        <a class="nav-link" href="studio.html#systems">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h7v7H4zM13 4h7v7h-7zM13 13h7v7h-7zM4 16h7v4H4z" fill="none" stroke="currentColor"
+                stroke-width="2" />
+            </svg>
+          </span>
+          <span>Systems</span>
+        </a>
+        <a class="nav-link" href="studio.html#worlds">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 18c3-4 6-6 9-6s5 1 9-1" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M8 3c-3 4-3 6 0 8" fill="none" stroke="currentColor" stroke-width="2" />
+              <circle cx="18" cy="5" r="3" fill="none" stroke="currentColor" stroke-width="2" />
+            </svg>
+          </span>
+          <span>Worlds</span>
+        </a>
+        <a class="nav-link" href="game-example.html">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M7 8h10a4 4 0 0 1 3.8 5.2l-1.1 3.4a2 2 0 0 1-3.7.3l-1-1.9H9l-1 1.9a2 2 0 0 1-3.7-.3l-1.1-3.4A4 4 0 0 1 7 8z"
+                fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M8 11v4M6 13h4M16 12h.01M18 14h.01" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" />
+            </svg>
+          </span>
+          <span>Game Example</span>
+        </a>
+        <a class="nav-link is-active" href="tools.html" aria-current="page">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14 6l4 4M5 19l8.5-8.5M14 6l2-2 4 4-2 2M4 20l3-.7L5 17z" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+          <span>Tools</span>
+        </a>
+        <a class="nav-link" href="mailto:joepmoreo@gmail.com">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 6h16v12H8l-4 4z" fill="none" stroke="currentColor" stroke-width="2" />
+            </svg>
+          </span>
+          <span>Contact</span>
+        </a>
+      </nav>
+
+      <section class="profile-block">
+        <div class="profile-image-wrap">
+          <div class="profile-image">
+            <span class="image-orbit orbit-one"></span>
+            <span class="image-orbit orbit-two"></span>
+            <span class="profile-face">JM</span>
+          </div>
+        </div>
+        <div class="profile-info">
+          <span class="profile-label">Independent Creator</span>
+          <span class="profile-status">
+            <span class="status-dot"></span>
+            Online
+          </span>
+        </div>
+      </section>
+
+      <section class="sidebar-bottom">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light and dark mode"
+          aria-pressed="true">
+          <span class="theme-toggle-track">
+            <span class="theme-toggle-thumb"></span>
+          </span>
+          <span class="theme-toggle-text">Dark</span>
+        </button>
+        <a class="download-link" href="mailto:joepmoreo@gmail.com">
+          <span>joepmoreo@gmail.com</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 12h16M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" />
+          </svg>
+        </a>
+      </section>
+    </aside>
+
+    <main class="dashboard tools-dashboard">
+      <section class="topbar">
+        <div class="topbar-left">
+          <span class="section-tag">Creator Index // Tools</span>
+        </div>
+        <div class="topbar-right">
+          <a class="topbar-button" href="index.html">
+            <span>Back to overview</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14M11 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" />
+            </svg>
+          </a>
+        </div>
+      </section>
+
+      <section class="tools-intro glass-panel" aria-labelledby="tools-title">
+        <div class="tools-intro-copy">
+          <span class="micro-label">Workshop / 001</span>
+          <h1 id="tools-title">Tools</h1>
+          <p>A workspace for small utilities, prototypes, and creative experiments.</p>
+        </div>
+        <div class="tools-display" aria-hidden="true">
+          <span class="tools-display-label">WORKSPACE</span>
+          <span class="tools-display-number">01</span>
+          <span class="tools-display-line"></span>
+          <span class="tools-display-status"><span></span> READY FOR IDEAS</span>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
